@@ -1588,11 +1588,19 @@ function getPinned(){
   try{
     const raw = localStorage.getItem(PINNED_KEY);
     if(raw===null){
-      localStorage.setItem(PINNED_KEY, JSON.stringify(DEFAULT_PINNED));
+      savePinnedList(DEFAULT_PINNED);
       return DEFAULT_PINNED.slice();
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if(!Array.isArray(parsed)) return DEFAULT_PINNED.slice();
+    /* sanitize: drop malformed entries, backfill missing names (guards against older/corrupted localStorage state) */
+    let changed = false;
+    const clean = parsed.filter(function(p){ return p && p.id && p.gid; }).map(function(p){
+      if(!p.name || !String(p.name).trim()){ changed = true; return { id:p.id, gid:p.gid, name: p.id===DEFAULT_PINNED[0].id ? DEFAULT_PINNED[0].name : 'Untitled Dashboard' }; }
+      return p;
+    });
+    if(changed || clean.length!==parsed.length) savePinnedList(clean);
+    return clean;
   }catch(e){ return DEFAULT_PINNED.slice(); }
 }
 function savePinnedList(list){
