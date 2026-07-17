@@ -444,79 +444,6 @@ html.dark .dm-bar-track-lg{background:rgba(255,255,255,.08);}
 .wl-badge-plan{background:#EAF2FE;color:#2563EB;}
 .wl-badge-add{background:#FEF6E7;color:#D97706;}
 .wl-badge-unset{background:#F1F5F9;color:#94A3B8;}
-
-/* ===== Welcome greeting ===== */
-.tb-greeting{margin:0 0 2px;font-size:12.5px;font-weight:700;color:var(--text-faint);display:flex;align-items:center;gap:6px;}
-.tb-greeting .wave{display:inline-block;animation:wave 2.2s ease-in-out infinite;transform-origin:70% 70%;}
-@keyframes wave{0%,60%,100%{transform:rotate(0deg);}10%{transform:rotate(16deg);}20%{transform:rotate(-8deg);}30%{transform:rotate(14deg);}40%{transform:rotate(-4deg);}50%{transform:rotate(10deg);}}
-
-/* ===== Pinned Dashboards card grid ===== */
-.pinned-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
-.pinned-card{border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--card-solid);cursor:pointer;
-  transition:transform .22s cubic-bezier(.2,.8,.3,1),box-shadow .22s,border-color .22s;position:relative;overflow:hidden;}
-.pinned-card:hover{transform:translateY(-3px);box-shadow:0 14px 28px -14px rgba(30,58,138,.28);border-color:rgba(30,58,138,.22);}
-.pinned-card.active{border-color:rgba(30,58,138,.4);box-shadow:0 0 0 3px var(--primary-50);}
-.pinned-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.pinned-card-icon{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#fff;
-  background:linear-gradient(135deg,#818CF8,#4F46E5);box-shadow:0 8px 16px -6px rgba(79,70,229,.5);flex-shrink:0;}
-.pinned-card-star{color:#F59E0B;flex-shrink:0;}
-.pinned-card-name{font-size:12.5px;font-weight:700;margin:0 0 8px;line-height:1.35;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:34px;}
-.pinned-card-bottom{display:flex;align-items:center;justify-content:space-between;}
-.pinned-card-badge{font-size:10px;font-weight:800;color:var(--success);background:var(--success-50);padding:2.5px 8px;border-radius:999px;}
-.pinned-card-actions{display:flex;gap:4px;opacity:0;transition:.15s;}
-.pinned-card:hover .pinned-card-actions{opacity:1;}
-.pinned-card-actions button{width:22px;height:22px;border-radius:7px;border:none;background:transparent;color:var(--text-faint);
-  display:grid;place-items:center;cursor:pointer;transition:.15s;}
-.pinned-card-actions button:hover{background:var(--primary-50);color:var(--primary);}
-.pinned-card-actions button.del:hover{background:var(--danger-50);color:var(--danger);}
-.pinned-add-card{border:1.5px dashed var(--border);border-radius:14px;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:6px;cursor:pointer;color:var(--text-faint);min-height:110px;transition:.2s;background:transparent;}
-.pinned-add-card:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-50);}
-.pinned-add-card .plus-circle{width:30px;height:30px;border-radius:50%;border:1.5px dashed currentColor;display:grid;place-items:center;}
-.pinned-add-card span{font-size:11.5px;font-weight:700;}
-
-/* ===== Recent Jobs mini table ===== */
-.recent-jobs-table{width:100%;border-collapse:collapse;font-size:12px;}
-.recent-jobs-table th{text-align:left;font-size:10.5px;font-weight:700;color:var(--text-faint);text-transform:uppercase;
-  letter-spacing:.03em;padding:0 8px 8px;border-bottom:1px solid var(--border);white-space:nowrap;}
-.recent-jobs-table td{padding:9px 8px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.recent-jobs-table tr:last-child td{border-bottom:none;}
-.recent-jobs-table tr{transition:background .15s;}
-.recent-jobs-table tr:hover td{background:var(--primary-50);}
-.recent-jobs-table td.rj-desc{max-width:220px;font-weight:600;}
-.rj-id{font-family:ui-monospace,monospace;font-size:11px;color:var(--primary);font-weight:700;}
-
-/* ===== View All Tools row ===== */
-.tool-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
-.tool-card{display:flex;align-items:center;gap:12px;padding:16px 16px;border-radius:16px;cursor:pointer;
-  border:1px solid var(--border);background:var(--card-solid);transition:transform .22s cubic-bezier(.2,.8,.3,1),box-shadow .22s;}
-.tool-card:hover{transform:translateY(-4px);box-shadow:0 16px 30px -14px rgba(30,58,138,.3);}
-.tool-card-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;color:#fff;flex-shrink:0;
-  transition:transform .3s cubic-bezier(.2,.8,.3,1.3);}
-.tool-card:hover .tool-card-icon{transform:scale(1.12) rotate(-6deg);}
-.tool-card-text{min-width:0;flex:1;}
-.tool-card-text p.t{margin:0;font-size:13px;font-weight:700;}
-.tool-card-text p.s{margin:2px 0 0;font-size:10.5px;color:var(--text-faint);font-weight:600;}
-.tool-card-chevron{color:var(--text-faint);flex-shrink:0;transition:transform .22s;}
-.tool-card:hover .tool-card-chevron{transform:translateX(3px);color:var(--primary);}
-
-/* ===== Quick Filters row ===== */
-.quick-filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.qf-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;border:1px solid var(--border);
-  background:var(--card-solid);font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;transition:.18s;}
-.qf-btn:hover{border-color:rgba(30,58,138,.3);color:var(--primary);background:var(--primary-50);transform:translateY(-2px);}
-.qf-btn.qf-reset{color:var(--danger);}
-.qf-btn.qf-reset:hover{background:var(--danger-50);border-color:rgba(225,29,72,.3);}
-.qf-icon{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;color:#fff;}
-
-/* ===== Footer sync bar ===== */
-.dash-footer{display:flex;align-items:center;justify-content:space-between;padding:16px 6px 4px;flex-wrap:wrap;gap:8px;
-  font-size:11.5px;color:var(--text-faint);font-weight:600;}
-.dash-footer-left{display:flex;align-items:center;gap:8px;}
-.sync-dot{width:16px;height:16px;border-radius:50%;background:var(--success-50);color:var(--success);display:grid;place-items:center;}
-
-@media (max-width:1100px){ .tool-row{grid-template-columns:repeat(2,1fr);} .pinned-recent-grid{grid-template-columns:1fr !important;} }
 </style>
 <body>
 
@@ -552,7 +479,6 @@ html.dark .dm-bar-track-lg{background:rgba(255,255,255,.08);}
     <header class="topbar">
       <div class="topbar-inner">
         <div class="tb-title">
-          <p class="tb-greeting" id="tbGreeting" style="display:none;">Welcome back! <span class="wave">👋</span></p>
           <h1 id="tbTitle">Dashboard</h1>
           <p id="tbSubtitle">Paste a Google Sheet link to generate a live report</p>
         </div>
@@ -1079,34 +1005,9 @@ const SHUTDOWN_TEMPLATE_HTML = `
         </div>
       </section>
 
-      <section class="section" style="animation-delay:.12s">
-        <div class="row3b-grid" style="display:grid;grid-template-columns:1.1fr 1.4fr;gap:20px;align-items:stretch;">
-          <div class="card">
-            <div class="card-head"><h3 class="card-title">Pinned Dashboards</h3></div>
-            <div class="card-body"><div class="pinned-grid" id="pinnedGrid"></div></div>
-          </div>
-          <div class="card">
-            <div class="card-head"><h3 class="card-title">Recent Jobs</h3><span class="view-all" id="viewAllRecentJobs">View All Jobs</span></div>
-            <div class="card-body table-wrap">
-              <table class="recent-jobs-table">
-                <thead><tr><th>No.</th><th>Job ID</th><th>Description</th><th>Department</th><th>Resource</th><th>Status</th><th>Priority</th><th>Start Date</th></tr></thead>
-                <tbody id="recentJobsBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" style="animation-delay:.13s">
-        <div class="card">
-          <div class="card-head"><h3 class="card-title">View All Tools</h3></div>
-          <div class="card-body"><div class="tool-row" id="toolRow"></div></div>
-        </div>
-      </section>
-
       <section class="section" style="animation-delay:.14s">
         <div class="card">
-          <div class="card-head"><h3 class="card-title">Critical &amp; High Priority Jobs</h3><span class="view-all" id="viewAllCritical" style="margin-right:8px;">View All</span><span class="badge badge-outline" id="criticalJobsCount"></span></div>
+          <div class="card-head"><h3 class="card-title">Critical &amp; High Priority Jobs</h3><span class="badge badge-outline" id="criticalJobsCount"></span></div>
           <div class="card-body table-wrap" style="max-height:420px;overflow-y:auto;">
             <table>
               <thead><tr><th>KKS</th><th>WO</th><th>Description</th><th>Owner</th><th style="width:150px">Progress</th><th>Status</th><th style="text-align:center">Remaining</th><th>Priority</th></tr></thead>
@@ -1154,7 +1055,7 @@ const SHUTDOWN_TEMPLATE_HTML = `
         </div>
       </section>
 
-      <section class="section" style="animation-delay:.26s" id="workListSection">
+      <section class="section" style="animation-delay:.26s">
         <div class="card">
           <div class="card-head">
             <h3 class="card-title">Work List — All Jobs</h3>
@@ -1173,18 +1074,6 @@ const SHUTDOWN_TEMPLATE_HTML = `
           </div>
         </div>
       </section>
-
-      <section class="section" style="animation-delay:.3s">
-        <div class="card">
-          <div class="card-head"><h3 class="card-title">Quick Filters</h3></div>
-          <div class="card-body"><div class="quick-filter-row" id="quickFilterRow"></div></div>
-        </div>
-      </section>
-
-      <div class="dash-footer">
-        <div class="dash-footer-left"><span class="sync-dot">✓</span> All data is synced from Google Sheets</div>
-        <div id="footerLastUpdated"></div>
-      </div>
 `;
 
 /* ============================================================ */
@@ -1730,13 +1619,6 @@ function renderShutdownDashboard(model){
   /* WORK LIST — all jobs, with editable Plan/Add tag (saved locally per sheet) */
   renderWorkList(model.jobs || []);
 
-  /* PINNED DASHBOARDS / RECENT JOBS / VIEW ALL TOOLS / QUICK FILTERS / FOOTER */
-  renderPinnedGrid();
-  renderRecentJobs(model);
-  renderToolRow(model);
-  renderQuickFilters();
-  renderFooter();
-
   /* VIEW ALL — wire up detail modals for each section */
   wireViewAllLinks(model);
 }
@@ -1873,130 +1755,6 @@ document.addEventListener('keydown', function(e){
   }
 });
 
-/* ============ INLINE PINNED DASHBOARDS GRID (main content) ============ */
-function renderPinnedGrid(){
-  const grid = document.getElementById('pinnedGrid');
-  if(!grid) return;
-  const pinned = getPinned();
-  const activeKey = CURRENT_SHEET ? CURRENT_SHEET.id+':'+CURRENT_SHEET.gid : null;
-  const cardIcon = '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/>';
-  const starIcon = '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>';
-  const cards = pinned.map(function(p){
-    const key = p.id+':'+p.gid;
-    const isActive = key===activeKey;
-    return '<div class="pinned-card'+(isActive?' active':'')+'" data-id="'+p.id+'" data-gid="'+p.gid+'">'+
-      '<div class="pinned-card-top">'+
-        '<div class="pinned-card-icon">'+icon(cardIcon,'width="16" height="16"')+'</div>'+
-        (isActive ? '<span class="pinned-card-star">'+icon(starIcon,'width="15" height="15" fill="currentColor"')+'</span>' : '')+
-      '</div>'+
-      '<p class="pinned-card-name">'+escapeHtml(p.name)+'</p>'+
-      '<div class="pinned-card-bottom"><span class="pinned-card-badge">Active</span>'+
-        '<div class="pinned-card-actions">'+
-          '<button class="edit" data-edit="1" title="แก้ไขชื่อ">'+icon('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>','width="12" height="12"')+'</button>'+
-          '<button class="del" data-del="1" title="ลบหมุด">'+icon('<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>','width="12" height="12"')+'</button>'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-  const addCard = '<div class="pinned-add-card" id="pinnedAddCard"><div class="plus-circle">'+icon('<path d="M12 5v14M5 12h14"/>','width="14" height="14"')+'</div><span>Add New Dashboard</span></div>';
-  grid.innerHTML = cards + addCard;
-
-  grid.querySelectorAll('.pinned-card').forEach(function(card){
-    card.addEventListener('click', function(e){
-      const id = card.dataset.id, gid = card.dataset.gid;
-      if(e.target.closest('[data-del]')){ e.stopPropagation(); unpinSheet(id, gid); renderPinnedGrid(); return; }
-      if(e.target.closest('[data-edit]')){
-        e.stopPropagation();
-        if(CURRENT_SHEET && CURRENT_SHEET.id===id && CURRENT_SHEET.gid===gid){ openPinModal(); }
-        else { loadPinned(id, gid).then(function(){ openPinModal(); }); }
-        return;
-      }
-      if(!(CURRENT_SHEET && CURRENT_SHEET.id===id && CURRENT_SHEET.gid===gid)) loadPinned(id, gid);
-    });
-  });
-  const addBtn = document.getElementById('pinnedAddCard');
-  if(addBtn) addBtn.addEventListener('click', showLanding);
-}
-
-/* ============ RECENT JOBS mini table ============ */
-function renderRecentJobs(model){
-  const body = document.getElementById('recentJobsBody');
-  if(!body) return;
-  const jobs = (model.jobs || []).slice();
-  jobs.sort(function(a,b){
-    const at = a.start ? a.start.getTime() : -Infinity;
-    const bt = b.start ? b.start.getTime() : -Infinity;
-    return bt - at;
-  });
-  const recent = jobs.slice(0, 6);
-  const statusBadge = {"Completed":"success","In Progress":"secondary","Cancelled":"slate","Not Started":"slate"};
-  const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
-  body.innerHTML = recent.length ? recent.map(function(j, i){
-    const jobId = 'JOB-'+String(1000+i+1);
-    const priLabel = j.priority===3 ? 'Critical' : j.priority===2 ? 'High' : 'Medium';
-    return '<tr><td>'+(i+1)+'</td><td class="rj-id">'+jobId+'</td>'+
-      '<td class="rj-desc">'+escapeHtml(j.desc||'-')+'</td>'+
-      '<td>'+escapeHtml(j.dept||'-')+'</td>'+
-      '<td>'+escapeHtml(j.resource||'-')+'</td>'+
-      '<td><span class="badge badge-'+(statusBadge[j.status]||'slate')+'">'+j.status+'</span></td>'+
-      '<td><span class="badge badge-'+priorityBadge[priLabel]+'">'+priLabel+'</span></td>'+
-      '<td style="color:var(--text-faint)">'+(j.start? j.start.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}) : '-')+'</td></tr>';
-  }).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--text-faint);padding:20px;">ไม่มีข้อมูลงาน</td></tr>';
-}
-
-/* ============ VIEW ALL TOOLS row ============ */
-function renderToolRow(model){
-  const el = document.getElementById('toolRow');
-  if(!el) return;
-  const tools = [
-    { id:'toolAlerts', label:'Alert Center', sub:(model.ALERTS_FULL? model.ALERTS_FULL.length : model.ALERTS.length)+' alerts', icon:ALERT_CFG.critical.icon, tone:'danger' },
-    { id:'toolCategory', label:'Work Category', sub:(model.WORK_CATEGORY_FULL? model.WORK_CATEGORY_FULL.length: model.WORK_CATEGORY.length)+' categories', icon:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>', tone:'secondary' },
-    { id:'toolGantt', label:'Gantt Chart', sub:'View full timeline', icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 4v6"/>', tone:'primary' },
-    { id:'toolActivities', label:'Activities', sub:(model.ACTIVITIES? model.ACTIVITIES.length:0)+' updates', icon:'<path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/>', tone:'warning' },
-  ];
-  el.innerHTML = tools.map(function(t){
-    const tone = TONE[t.tone];
-    return '<div class="tool-card" id="'+t.id+'"><div class="tool-card-icon" style="background:'+tone.grad+';">'+icon(t.icon,'width="19" height="19"')+'</div>'+
-      '<div class="tool-card-text"><p class="t">'+t.label+'</p><p class="s">'+t.sub+'</p></div>'+
-      '<div class="tool-card-chevron">'+icon('<path d="m9 18 6-6-6-6"/>','width="16" height="16"')+'</div></div>';
-  }).join('');
-}
-
-/* ============ QUICK FILTERS pill row ============ */
-function renderQuickFilters(){
-  const el = document.getElementById('quickFilterRow');
-  if(!el) return;
-  const pills = [
-    { target:'globalDeptFilter', label:'Department', tone:'primary', icon:'<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/>' },
-    { target:'globalResourceFilter', label:'Resource Type', tone:'secondary', icon:'<circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>' },
-    { target:'globalMonthFilter', label:'Month', tone:'warning', icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>' },
-  ];
-  el.innerHTML = pills.map(function(p){
-    const tone = TONE[p.tone];
-    return '<button type="button" class="qf-btn" data-target="'+p.target+'"><span class="qf-icon" style="background:'+tone.grad+';">'+icon(p.icon,'width="13" height="13"')+'</span>'+p.label+'</button>';
-  }).join('') + '<button type="button" class="qf-btn qf-reset" id="qfReset">'+icon('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>','width="14" height="14"')+'Reset Filters</button>';
-
-  el.querySelectorAll('.qf-btn[data-target]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      const sel = document.getElementById(btn.dataset.target);
-      if(sel){ sel.focus(); if(typeof sel.scrollIntoView === 'function') sel.scrollIntoView({behavior:'smooth', block:'center'}); }
-    });
-  });
-  const resetBtn = document.getElementById('qfReset');
-  if(resetBtn) resetBtn.addEventListener('click', function(){
-    const gr = document.getElementById('globalFilterReset');
-    if(gr) gr.click();
-  });
-}
-
-/* ============ FOOTER sync bar ============ */
-function renderFooter(){
-  const el = document.getElementById('footerLastUpdated');
-  if(!el) return;
-  const now = new Date();
-  el.textContent = 'Last updated: '+now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-}
-
 function wireViewAllLinks(model){
   const alertsBtn = document.getElementById('viewAllAlerts');
   if(alertsBtn) alertsBtn.onclick = function(){
@@ -2103,19 +1861,6 @@ function wireViewAllLinks(model){
         '<span style="font-size:10.5px;color:var(--text-faint);flex-shrink:0;">'+escapeHtml(a.time)+'</span></div>';
     }).join('');
     openDetailModal('Recent Activities & Highlights', list.length+' items', rows || '<p class="empty-note">ไม่มีกิจกรรมล่าสุด</p>');
-  };
-
-  /* View All Tools row — reuse the same handlers as their card counterparts */
-  const toolAlerts = document.getElementById('toolAlerts'); if(toolAlerts && alertsBtn) toolAlerts.onclick = alertsBtn.onclick;
-  const toolCategory = document.getElementById('toolCategory'); if(toolCategory && categoryBtn) toolCategory.onclick = categoryBtn.onclick;
-  const toolGantt = document.getElementById('toolGantt'); if(toolGantt && ganttBtn) toolGantt.onclick = ganttBtn.onclick;
-  const toolActivities = document.getElementById('toolActivities'); if(toolActivities && activitiesBtn) toolActivities.onclick = activitiesBtn.onclick;
-
-  /* Recent Jobs "View All Jobs" — scroll down to the full Work List table */
-  const recentJobsBtn = document.getElementById('viewAllRecentJobs');
-  if(recentJobsBtn) recentJobsBtn.onclick = function(){
-    const sec = document.getElementById('workListSection');
-    if(sec && typeof sec.scrollIntoView === 'function') sec.scrollIntoView({behavior:'smooth', block:'start'});
   };
 }
 
@@ -2543,13 +2288,11 @@ function pinSheet(id, gid, name){
   list.push({ id:id, gid:gid, name:(name||'Untitled Dashboard').trim() || 'Untitled Dashboard' });
   savePinnedList(list);
   renderSidebarNav();
-  if(typeof renderPinnedGrid === 'function') renderPinnedGrid();
 }
 function unpinSheet(id, gid){
   const list = getPinned().filter(function(p){ return !(p.id===id && p.gid===gid); });
   savePinnedList(list);
   renderSidebarNav();
-  if(typeof renderPinnedGrid === 'function') renderPinnedGrid();
 }
 
 function renderSidebarNav(){
@@ -2625,7 +2368,6 @@ document.getElementById('exportBtn').addEventListener('click', function(){ windo
 
 function showLanding(){
   CURRENT_SHEET = null;
-  const g = document.getElementById('tbGreeting'); if(g) g.style.display='none';
   document.getElementById('landingView').style.display='';
   document.getElementById('skeletonWrap').style.display='none';
   document.getElementById('mainContent').style.display='none';
@@ -2642,7 +2384,6 @@ function showLanding(){
 }
 function showDashboard(){
   document.getElementById('landingView').style.display='none';
-  const g = document.getElementById('tbGreeting'); if(g) g.style.display='';
   document.getElementById('exportBtn').style.display='';
   document.getElementById('pinBtn').style.display='';
   document.getElementById('newSheetBtnTop').style.display='';
@@ -2743,7 +2484,7 @@ function loadPinned(id, gid){
   document.getElementById('landingView').style.display='none';
   document.getElementById('mainContent').style.display='none';
   document.getElementById('skeletonWrap').style.display='flex';
-  return performLoad(id, gid).then(function(){
+  performLoad(id, gid).then(function(){
     showDashboard();
   }).catch(function(err){
     console.error(err);
@@ -2767,4 +2508,5 @@ renderSidebarNav();
   }
 })();
 </script>
-</body></html>
+</body>
+</html>
