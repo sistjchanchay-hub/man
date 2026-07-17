@@ -1592,13 +1592,19 @@ function getPinned(){
       return DEFAULT_PINNED.slice();
     }
     const parsed = JSON.parse(raw);
-    if(!Array.isArray(parsed)) return DEFAULT_PINNED.slice();
+    if(!Array.isArray(parsed) || parsed.length===0){
+      /* empty or malformed list (e.g. everything got unpinned, or an older buggy version left it blank)
+         — always keep at least the default dashboard available rather than stranding the user on a blank landing page */
+      savePinnedList(DEFAULT_PINNED);
+      return DEFAULT_PINNED.slice();
+    }
     /* sanitize: drop malformed entries, backfill missing names (guards against older/corrupted localStorage state) */
     let changed = false;
-    const clean = parsed.filter(function(p){ return p && p.id && p.gid; }).map(function(p){
+    let clean = parsed.filter(function(p){ return p && p.id && p.gid; }).map(function(p){
       if(!p.name || !String(p.name).trim()){ changed = true; return { id:p.id, gid:p.gid, name: p.id===DEFAULT_PINNED[0].id ? DEFAULT_PINNED[0].name : 'Untitled Dashboard' }; }
       return p;
     });
+    if(clean.length===0) clean = DEFAULT_PINNED.slice();
     if(changed || clean.length!==parsed.length) savePinnedList(clean);
     return clean;
   }catch(e){ return DEFAULT_PINNED.slice(); }
