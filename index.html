@@ -478,103 +478,11 @@ html.dark .sk-box::after{background:linear-gradient(100deg,transparent 30%,rgba(
 </div>
 
 <script>
-/* ============ MOCK DATA (derived from client's Shutdown Work List Y26QSD1PP9) ============ */
-const PROJECT = { shutdownStart:"2026-07-26", shutdownEnd:"2026-08-20", today:"2026-08-05" };
-const KPIS = { totalJobs:419, completed:152, inProgress:134, notStarted:98, delayed:35, criticalJobs:24,
-  budgetTotal:88670002, budgetSpent:52384600, remainingDays:15 };
-
-const WORK_STATUS = [
-  {name:"Completed", value:152, color:"#10B981"},
-  {name:"In Progress", value:134, color:"#4F46E5"},
-  {name:"Not Started", value:98, color:"#CBD5E1"},
-  {name:"Delay", value:35, color:"#F43F5E"},
-];
-
-const DAILY_PROGRESS = [
-  {day:"26 Jul",plan:4,actual:3},{day:"27 Jul",plan:10,actual:8},{day:"28 Jul",plan:18,actual:15},
-  {day:"29 Jul",plan:27,actual:24},{day:"30 Jul",plan:37,actual:33},{day:"31 Jul",plan:48,actual:42},
-  {day:"1 Aug",plan:60,actual:53},{day:"2 Aug",plan:72,actual:64},{day:"3 Aug",plan:85,actual:78},
-  {day:"4 Aug",plan:98,actual:92},{day:"5 Aug",plan:112,actual:108},{day:"6 Aug",plan:126,actual:118},
-  {day:"7 Aug",plan:140,actual:128},{day:"8 Aug",plan:154,actual:138},{day:"9 Aug",plan:168,actual:null},
-  {day:"10 Aug",plan:182,actual:null},{day:"11 Aug",plan:196,actual:null},{day:"12 Aug",plan:212,actual:null},
-  {day:"13 Aug",plan:228,actual:null},{day:"14 Aug",plan:245,actual:null},{day:"15 Aug",plan:262,actual:null},
-  {day:"16 Aug",plan:285,actual:null},{day:"17 Aug",plan:310,actual:null},{day:"18 Aug",plan:345,actual:null},
-  {day:"19 Aug",plan:382,actual:null},{day:"20 Aug",plan:419,actual:null},
-];
-
-const ALERTS = [
-  {type:"critical", title:"Wall tube replacement L=3-5M", detail:"รอผลตรวจ NDT ก่อนเริ่มงาน — เสี่ยงกระทบ Critical Path", kks:"90HAG26BB030"},
-  {type:"overdue", title:"Remove the Insulation (ผนังเตา)", detail:"เลยกำหนดแล้ว 2 วัน — รอ Outsource เข้าพื้นที่", kks:"90BLR"},
-  {type:"critical", title:"Overlay welding wall tube", detail:"กำลังพล NIS ไม่เพียงพอ ต้องยืนยันแผนสำรอง", kks:"90HAG26BB030"},
-  {type:"near", title:"Scaffolding Interior (Cyclone) No.2", detail:"เหลือเวลา 1 วันก่อนถึงกำหนด Finish", kks:"90BLR"},
-  {type:"missing", title:"Curing heat treatment refractory", detail:"ยังไม่ระบุ PIC/Comment และ Owner ที่ชัดเจน", kks:"90BLR"},
-  {type:"overdue", title:"Inspection & Repairing refractory", detail:"รอผลตรวจเกินแผน — กระทบคิวงาน Curing ถัดไป", kks:"90BLR"},
-  {type:"near", title:"Wall tube inspection & UTM", detail:"ES (PQA) ต้องส่งผลตรวจภายในวันพรุ่งนี้", kks:"90HAG26BB030"},
-];
-const ALERT_CFG = {
-  critical:{label:"Critical", color:"var(--danger)", bg:"var(--danger-50)", icon:'<path d="M12 9v4"/><path d="M12 17h.01"/><path d="m21.7 16.3-8-15a2 2 0 0 0-3.4 0l-8 15A2 2 0 0 0 4 19h16a2 2 0 0 0 1.7-2.7Z"/>'},
-  overdue:{label:"Overdue", color:"var(--warning)", bg:"var(--warning-50)", icon:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
-  near:{label:"Near Deadline", color:"var(--primary)", bg:"var(--primary-50)", icon:'<path d="M10 2v2"/><path d="M14 2v2"/><path d="M17 22v-2a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="8"/>'},
-  missing:{label:"Missing Data", color:"var(--text-muted)", bg:"#F1F5F9", icon:'<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/>'},
-};
-
-const WORK_CATEGORY = [
-  {category:"Mechanical", jobs:142, color:"#4F46E5", icon:'<path d="m14.7 6.3-3.6 3.6-4-4-1.5 1.5 4 4-3.6 3.6a3 3 0 1 0 3.5 3.5l7.6-7.6a3 3 0 1 0-2.4-4.6Z"/>'},
-  {category:"Boiler", jobs:58, color:"#2563EB", icon:'<path d="M12 2v4"/><path d="M6 20a6 6 0 0 1 12 0"/><rect x="4" y="12" width="16" height="8" rx="2"/><path d="M9 12V9a3 3 0 0 1 6 0v3"/>'},
-  {category:"Electrical", jobs:124, color:"#059669", icon:'<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/>'},
-  {category:"Instrumentation", jobs:32, color:"#06B6D4", icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>'},
-  {category:"Scaffold", jobs:18, color:"#7C3AED", icon:'<path d="M4 21V3M20 21V3M4 8h16M4 15h16"/>'},
-  {category:"Insulation", jobs:15, color:"#F59E0B", icon:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>'},
-  {category:"Automation", jobs:21, color:"#E11D48", icon:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/>'},
-  {category:"Civil", jobs:9, color:"#64748B", icon:'<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M14 9h1M14 13h1"/>'},
-];
-
-const RESOURCE_PIE = [ {name:"NIS (Internal)", value:317, color:"#059669"}, {name:"Outsource", value:65, color:"#F59E0B"} ];
-
-const CRITICAL_JOBS = [
-  {kks:"90HAG26BB030", wo:"WO-26841", desc:"Wall tube replacement L=3-5M", owner:"ทีม Mechanical - Boiler", progress:35, status:"In Progress", remaining:2, priority:"Critical"},
-  {kks:"90HAG26BB030", wo:"WO-26842", desc:"Overlay welding wall tube", owner:"ทีม Welding - Pressure Part", progress:60, status:"In Progress", remaining:2, priority:"Critical"},
-  {kks:"90BLR", wo:"WO-26775", desc:"Remove the Insulation (ผนังเตา)", owner:"ทีม Insulation", progress:45, status:"Delay", remaining:-2, priority:"Critical"},
-  {kks:"90HAG77BB001", wo:"WO-26850", desc:"Replace tube back pass RH/SH", owner:"ทีม Mechanical - Boiler", progress:20, status:"In Progress", remaining:3, priority:"Critical"},
-  {kks:"90BLR", wo:"WO-26760", desc:"Inspection & Repairing refractory (ปูนเท)", owner:"ทีม Outsource - Refractory", progress:55, status:"In Progress", remaining:4, priority:"High"},
-  {kks:"90BLR", wo:"WO-26702", desc:"Scaffolding Interior (Cyclone) No.2", owner:"ทีม Outsource - Scaffold", progress:80, status:"In Progress", remaining:1, priority:"High"},
-  {kks:"90ENC", wo:"WO-26910", desc:"SWG Inspection & Overhaul", owner:"ทีม Electrical - SWG", progress:10, status:"Not Started", remaining:6, priority:"Critical"},
-  {kks:"90HDE", wo:"WO-26930", desc:"MCC Contactor Replacement", owner:"ทีม Electrical - MCC", progress:0, status:"Not Started", remaining:7, priority:"Medium"},
-  {kks:"90BBA", wo:"WO-26955", desc:"Boiler Feed Pump Overhaul", owner:"ทีม Mechanical - Rotary", progress:65, status:"In Progress", remaining:3, priority:"High"},
-  {kks:"90HAG26BB030", wo:"WO-26860", desc:"Wall tube inspection & UTM", owner:"ES (PQA)", progress:90, status:"In Progress", remaining:1, priority:"Critical"},
-];
-
-const GANTT_ITEMS = [
-  {name:"Scaffolding & Insulation Removal", start:"2026-07-26", end:"2026-08-01", critical:false, progress:100},
-  {name:"Boiler Inspection & NDT", start:"2026-07-29", end:"2026-08-05", critical:true, progress:78},
-  {name:"Wall Tube Replacement & Welding", start:"2026-08-01", end:"2026-08-14", critical:true, progress:32},
-  {name:"Refractory Repair & Curing", start:"2026-08-09", end:"2026-08-19", critical:true, progress:12},
-  {name:"Electrical SWG / MCC Overhaul", start:"2026-07-28", end:"2026-08-10", critical:false, progress:46},
-  {name:"Insulation Reinstatement", start:"2026-08-15", end:"2026-08-20", critical:false, progress:0},
-];
-
-const BUDGET = { material:40999434, labor:21784432, ot:13015568, total:88670002, spent:52384600 };
-const BUDGET_ITEMS = [
-  {name:"Material", value:BUDGET.material, color:"#4F46E5"},
-  {name:"Labor", value:BUDGET.labor, color:"#059669"},
-  {name:"OT", value:BUDGET.ot, color:"#F59E0B"},
-  {name:"Remaining", value:BUDGET.total-BUDGET.spent, color:"#E2E8F0"},
-];
-
-const ACTIVITIES = [
-  {type:"inspection", title:"Inspection Completed", detail:"Wall tube inspection & UTM ผ่านการตรวจสอบ", user:"ES (PQA)", time:"10 min ago"},
-  {type:"update", title:"Work Updated", detail:"Scaffolding (Cyclone) No.2 65% → 80%", user:"Outsource", time:"32 min ago"},
-  {type:"outsource", title:"Outsource Assigned", detail:"Refractory Repair (ปูนเท) มอบหมายผู้รับเหมา", user:"Suthinan", time:"1 hr ago"},
-  {type:"approval", title:"Approval Completed", detail:"อนุมัติ OT ทีม Welding - Pressure Part", user:"Shutdown Manager", time:"2 hr ago"},
-  {type:"material", title:"Material Received", detail:"Insulation Material QTY 120 Items", user:"Warehouse", time:"3 hr ago"},
-];
-const ACT_CFG = {
-  update:{color:"var(--primary)", bg:"var(--primary-50)", icon:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>'},
-  inspection:{color:"var(--success)", bg:"var(--success-50)", icon:'<path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'},
-  approval:{color:"var(--secondary)", bg:"var(--secondary-50)", icon:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>'},
-  outsource:{color:"var(--warning)", bg:"var(--warning-50)", icon:'<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M14 9h1"/><path d="M14 13h1"/>'},
-  material:{color:"#64748B", bg:"#F1F5F9", icon:'<path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><path d="M3 8h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 8Z"/><path d="M9 12h6"/>'},
-};
+/* ============ CONFIG (live Google Sheet source) ============ */
+const SHEET_ID = "1-Ggrb6DBK3Bhi7We58IomV034OKtBIMe7l_XyRlBeMk";
+const SHEET_GID = "1374892773";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&gid="+SHEET_GID;
+const SHEET_YEAR = 2026; /* shutdown year — update if this sheet is reused for a future shutdown */
 
 const NAV_ITEMS = [
   {label:"Dashboard", active:true, icon:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'},
@@ -589,15 +497,6 @@ const NAV_ITEMS = [
   {label:"Settings", icon:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>'},
 ];
 
-const KPI_DEFS = [
-  {label:"Total Jobs", value:KPIS.totalJobs, icon:'<path d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h4"/><rect x="9" y="3" width="12" height="14" rx="2"/><path d="M13 8h4"/><path d="M13 12h4"/>', trend:"↑ 12 from last update", tone:"primary", pct:100},
-  {label:"Completed", value:KPIS.completed, icon:'<path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', trend:"↑ "+Math.round(KPIS.completed/KPIS.totalJobs*100)+"% of total jobs", tone:"success", pct:KPIS.completed/KPIS.totalJobs*100},
-  {label:"In Progress", value:KPIS.inProgress, icon:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>', trend:"↑ "+Math.round(KPIS.inProgress/KPIS.totalJobs*100)+"% of total jobs", tone:"secondary", pct:KPIS.inProgress/KPIS.totalJobs*100},
-  {label:"Not Started", value:KPIS.notStarted, icon:'<circle cx="12" cy="12" r="10" stroke-dasharray="4 3"/>', trend:Math.round(KPIS.notStarted/KPIS.totalJobs*100)+"% of total jobs", tone:"slate", pct:KPIS.notStarted/KPIS.totalJobs*100},
-  {label:"Critical Jobs", value:KPIS.criticalJobs, icon:'<path d="M12 9v4"/><path d="M12 17h.01"/><path d="m21.7 16.3-8-15a2 2 0 0 0-3.4 0l-8 15A2 2 0 0 0 4 19h16a2 2 0 0 0 1.7-2.7Z"/>', trend:"↑ "+Math.round(KPIS.criticalJobs/KPIS.totalJobs*100)+"% critical attention", tone:"danger", pct:KPIS.criticalJobs/KPIS.totalJobs*100},
-  {label:"Budget", value:KPIS.budgetSpent, display:(v)=>"฿"+formatCompact(v), icon:'<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M16 12h.01"/><path d="M2 10h20"/>', trend:"Spent ฿"+formatCompact(KPIS.budgetSpent)+" ("+Math.round(KPIS.budgetSpent/KPIS.budgetTotal*100)+"%)", tone:"violet", pct:KPIS.budgetSpent/KPIS.budgetTotal*100},
-  {label:"Remaining Days", value:KPIS.remainingDays, suffix:" Days", icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14v3"/><path d="m10.5 15.5 1.5 1.5 1.5-1.5"/>', trend:"Until shutdown end", tone:"warning", pct:KPIS.remainingDays/26*100},
-];
 const TONE = {
   primary:{bg:"#EEF0FE", fg:"#4F46E5", grad:"linear-gradient(135deg,#818CF8,#4F46E5)"},
   success:{bg:"#E7FBF3", fg:"#059669", grad:"linear-gradient(135deg,#34D399,#059669)"},
@@ -608,12 +507,26 @@ const TONE = {
   violet:{bg:"#F5F0FF", fg:"#7C3AED", grad:"linear-gradient(135deg,#C084FC,#7C3AED)"},
 };
 
+const ALERT_CFG = {
+  critical:{label:"Critical", color:"var(--danger)", bg:"var(--danger-50)", icon:'<path d="M12 9v4"/><path d="M12 17h.01"/><path d="m21.7 16.3-8-15a2 2 0 0 0-3.4 0l-8 15A2 2 0 0 0 4 19h16a2 2 0 0 0 1.7-2.7Z"/>'},
+  overdue:{label:"Overdue", color:"var(--warning)", bg:"var(--warning-50)", icon:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
+  near:{label:"Near Deadline", color:"var(--primary)", bg:"var(--primary-50)", icon:'<path d="M10 2v2"/><path d="M14 2v2"/><path d="M17 22v-2a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="8"/>'},
+  missing:{label:"Missing Data", color:"var(--text-muted)", bg:"#F1F5F9", icon:'<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/>'},
+};
+const ACT_CFG = {
+  update:{color:"var(--primary)", bg:"var(--primary-50)", icon:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>'},
+  inspection:{color:"var(--success)", bg:"var(--success-50)", icon:'<path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'},
+  approval:{color:"var(--secondary)", bg:"var(--secondary-50)", icon:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>'},
+  outsource:{color:"var(--warning)", bg:"var(--warning-50)", icon:'<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M14 9h1"/><path d="M14 13h1"/>'},
+  material:{color:"#64748B", bg:"#F1F5F9", icon:'<path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><path d="M3 8h18l-1.5 12.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 8Z"/><path d="M9 12h6"/>'},
+};
+
 /* ============ HELPERS ============ */
 function formatNum(n){ return Math.round(n).toLocaleString('en-US'); }
 function formatCompact(n){
   if(Math.abs(n)>=1e6) return (n/1e6).toFixed(2)+"M";
   if(Math.abs(n)>=1e3) return (n/1e3).toFixed(0)+"K";
-  return String(n);
+  return String(Math.round(n||0));
 }
 function icon(svgInner, extraAttrs){
   return '<svg '+ (extraAttrs||'width="16" height="16"') +' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svgInner+'</svg>';
@@ -633,254 +546,540 @@ function animateNum(el, target, decimals, prefix, suffix, duration){
   requestAnimationFrame(step);
 }
 
-/* ============ SIDEBAR NAV + WIDGET ============ */
-document.getElementById('sbNav').innerHTML = NAV_ITEMS.map(n=>
-  '<button class="sb-item'+(n.active?' active':'')+'">'+icon(n.icon)+'<span>'+n.label+'</span></button>'
-).join('');
+/* ============ CSV PARSER (RFC4180, handles quoted/multiline fields) ============ */
+function parseCSV(text){
+  const rows = []; let row=[]; let field=''; let inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field+='"'; i++; } else { inQuotes=false; }
+      } else field += c;
+    } else {
+      if(c === '"') inQuotes = true;
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\r'){ /* skip */ }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
 
-(function(){
-  const pct = Math.round(KPIS.completed/KPIS.totalJobs*100);
-  const r = 18, c = 2*Math.PI*r;
-  const offset = c - (pct/100)*c;
-  document.getElementById('sbWidget').innerHTML =
-    '<div class="sb-widget-top">'+
-      '<div class="ring-wrap"><svg width="46" height="46" viewBox="0 0 46 46">'+
-        '<circle cx="23" cy="23" r="'+r+'" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="4.5"/>'+
-        '<circle cx="23" cy="23" r="'+r+'" fill="none" stroke="url(#ringGrad)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+c+'" id="sbRingProgress"/>'+
-        '<defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3B5BC4"/><stop offset="100%" stop-color="#14A398"/></linearGradient></defs>'+
-      '</svg><div class="pct">'+pct+'%</div></div>'+
-      '<div class="sb-widget-text"><p class="l">Project</p><p class="v">Y26QSD1PP9</p><p class="d">Shutdown Maintenance</p></div>'+
+/* ============ COLUMN MAP (0-based, matches Shutdown Work List structure) ============ */
+const COL = {
+  NO:0, AREA:1, DEPT:2, DEPT_NIS:3, SUBTYPE:4, CLASSIFY:5, KKS:6, DESC:7, ACTIVITY:8,
+  ACCOUNT_NAME:11, RESPONSE_NAME:12, DECISION:14,
+  WO_AREA:26, WO_NIS:27, COST_OT:22,
+  TOTAL_LABOR:39, SPARE:40, TOTAL_COST:41,
+  START:63, FINISH:64,
+};
+const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+
+function parseMoney(s){
+  if(!s) return 0;
+  const n = parseFloat(String(s).replace(/,/g,'').trim());
+  return isNaN(n) ? 0 : n;
+}
+function parseCSVDate(s){
+  if(!s) return null;
+  s = String(s).trim();
+  if(!s) return null;
+  const m = /^([A-Za-z]{3})\s+(\d{1,2})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/.exec(s);
+  if(!m) return null;
+  const mon = MONTHS[m[1]];
+  if(mon === undefined) return null;
+  let hour = parseInt(m[3],10);
+  const isPM = m[5].toUpperCase()==='PM';
+  if(isPM && hour<12) hour+=12;
+  if(!isPM && hour===12) hour=0;
+  return new Date(SHEET_YEAR, mon, parseInt(m[2],10), hour, parseInt(m[4],10), 0);
+}
+
+/* ============ FETCH LIVE DATA ============ */
+function fetchSheetRows(){
+  return fetch(CSV_URL, {cache:"no-store"}).then(function(r){
+    if(!r.ok) throw new Error("HTTP "+r.status+" — ตรวจสอบสิทธิ์การแชร์ของ Google Sheet (ต้องเป็น Anyone with the link)");
+    return r.text();
+  }).then(function(text){
+    const table = parseCSV(text);
+    let headerIdx = table.findIndex(function(r){ return (r[6]||'').trim() === 'KKS code'; });
+    if(headerIdx === -1) headerIdx = 15;
+    const dataRows = table.slice(headerIdx+1).filter(function(r){ return r.some(function(c){ return c && c.trim()!==''; }); });
+    return dataRows;
+  });
+}
+
+/* ============ BUILD DATA MODEL FROM RAW ROWS ============ */
+function buildModel(rows){
+  const now = new Date();
+
+  const jobs = rows.map(function(r){
+    const decisionRaw = (r[COL.DECISION]||'').trim();
+    const dept = (r[COL.DEPT]||'').trim() || (r[COL.DEPT_NIS]||'').trim() || 'Other';
+    const classify = (r[COL.CLASSIFY]||'').trim();
+    const start = parseCSVDate(r[COL.START]);
+    const finish = parseCSVDate(r[COL.FINISH]);
+    const cost = parseMoney(r[COL.TOTAL_COST]);
+    const labor = parseMoney(r[COL.TOTAL_LABOR]);
+    const spare = parseMoney(r[COL.SPARE]);
+    const ot = parseMoney(r[COL.COST_OT]);
+    const isCancelled = /cancel|เลื่อนไปทำ/i.test(decisionRaw);
+
+    let status;
+    if(isCancelled) status='Cancelled';
+    else if(!start || !finish) status='Not Started';
+    else if(now < start) status='Not Started';
+    else if(now > finish) status='Completed';
+    else status='In Progress';
+
+    let progress = 0;
+    if(status==='Completed') progress=100;
+    else if(status==='In Progress' && start && finish && finish>start){
+      progress = Math.round(Math.min(100,Math.max(0,(now-start)/(finish-start)*100)));
+    }
+
+    let resource;
+    if(isCancelled) resource='Cancelled';
+    else if(/outsource/i.test(decisionRaw)) resource='Outsource';
+    else if(/nis/i.test(decisionRaw)) resource='NIS';
+    else if(/area|em psd|es \(pqa\)/i.test(decisionRaw)) resource='Area';
+    else resource='Pending';
+
+    let priority = 1;
+    if(classify==='Non-routine (ES)') priority=3;
+    else if(classify==='Backlog' || classify==='งานไม่ประจำ (EM)') priority=2;
+
+    const owner = [ (r[COL.ACCOUNT_NAME]||'').trim(), (r[COL.RESPONSE_NAME]||'').trim() ].filter(Boolean).join(' / ') || dept;
+    const desc = (r[COL.DESC]||'').trim() || '(No description)';
+
+    return {
+      no:(r[COL.NO]||'').trim(), area:(r[COL.AREA]||'').trim(), dept, classify,
+      kks:(r[COL.KKS]||'').trim(), desc, owner,
+      wo: (r[COL.WO_AREA]||'').trim() || (r[COL.WO_NIS]||'').trim() || '',
+      decisionRaw, resource, status, progress, start, finish, cost, labor, spare, ot, priority
+    };
+  });
+
+  const totalJobs = jobs.length;
+  const completed = jobs.filter(function(j){ return j.status==='Completed'; }).length;
+  const inProgress = jobs.filter(function(j){ return j.status==='In Progress'; }).length;
+  const notStarted = jobs.filter(function(j){ return j.status==='Not Started'; }).length;
+  const cancelled = jobs.filter(function(j){ return j.status==='Cancelled'; }).length;
+  const criticalJobs = jobs.filter(function(j){ return j.priority===3 && j.status!=='Cancelled'; }).length;
+
+  const budgetMaterial = jobs.reduce(function(s,j){ return s+j.spare; },0);
+  const budgetLabor = jobs.reduce(function(s,j){ return s+j.labor; },0);
+  const budgetOT = jobs.reduce(function(s,j){ return s+j.ot; },0);
+  const budgetTotal = budgetMaterial+budgetLabor+budgetOT;
+  const budgetSpent = jobs.filter(function(j){ return j.status==='Completed'; }).reduce(function(s,j){ return s+j.cost; },0);
+
+  const datedJobs = jobs.filter(function(j){ return j.start && j.finish && j.status!=='Cancelled'; });
+  const dayMs = 86400000;
+  const minStart = datedJobs.length ? new Date(Math.min.apply(null, datedJobs.map(function(j){ return +j.start; }))) : new Date(SHEET_YEAR,6,25);
+  const maxFinish = datedJobs.length ? new Date(Math.max.apply(null, datedJobs.map(function(j){ return +j.finish; }))) : new Date(SHEET_YEAR,7,20);
+  const totalDays = Math.max(1, Math.round((maxFinish-minStart)/dayMs));
+  const remainingDays = Math.max(0, daysBetween(now, maxFinish));
+
+  const PROJECT = {
+    shutdownStart: minStart.toISOString().slice(0,10),
+    shutdownEnd: maxFinish.toISOString().slice(0,10),
+    todayLabel: now.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+    rangeLabel: minStart.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' – '+maxFinish.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+  };
+
+  const KPIS = { totalJobs, completed, inProgress, notStarted, cancelled, criticalJobs, budgetTotal, budgetSpent, remainingDays };
+
+  const WORK_STATUS = [
+    {name:"Completed", value:completed, color:"#10B981"},
+    {name:"In Progress", value:inProgress, color:"#4F46E5"},
+    {name:"Not Started", value:notStarted, color:"#CBD5E1"},
+    {name:"Cancelled", value:cancelled, color:"#F43F5E"},
+  ];
+
+  const DAILY_PROGRESS = [];
+  for(let i=0;i<=totalDays;i++){
+    const d = new Date(minStart.getTime()+i*dayMs);
+    const endOfDay = new Date(d.getFullYear(),d.getMonth(),d.getDate(),23,59,59);
+    const planCount = datedJobs.filter(function(j){ return j.finish<=endOfDay; }).length;
+    const isPastOrToday = endOfDay <= now;
+    const actualCount = isPastOrToday ? jobs.filter(function(j){ return j.status==='Completed' && j.finish<=endOfDay; }).length : null;
+    DAILY_PROGRESS.push({ date:d, day: d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}), plan:planCount, actual:actualCount });
+  }
+
+  const deptColors = ["#4F46E5","#2563EB","#059669","#06B6D4","#7C3AED","#F59E0B","#E11D48","#64748B"];
+  const deptIcon = '<path d="m14.7 6.3-3.6 3.6-4-4-1.5 1.5 4 4-3.6 3.6a3 3 0 1 0 3.5 3.5l7.6-7.6a3 3 0 1 0-2.4-4.6Z"/>';
+  const deptCounts = {};
+  jobs.forEach(function(j){ if(j.status!=='Cancelled'){ deptCounts[j.dept]=(deptCounts[j.dept]||0)+1; } });
+  const WORK_CATEGORY = Object.entries(deptCounts).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8).map(function(e,i){
+    return { category:e[0], jobs:e[1], color:deptColors[i%deptColors.length], icon:deptIcon };
+  });
+
+  const resColors = { NIS:"#059669", Outsource:"#F59E0B", Area:"#4F46E5", Pending:"#94A3B8" };
+  const resCounts = {};
+  jobs.forEach(function(j){ if(j.status!=='Cancelled'){ resCounts[j.resource]=(resCounts[j.resource]||0)+1; } });
+  const RESOURCE_PIE = Object.entries(resCounts).map(function(e){
+    return { name: e[0]==='NIS'?'NIS (Internal)':e[0], value:e[1], color:resColors[e[0]]||'#94A3B8' };
+  });
+
+  const CRITICAL_JOBS = jobs.filter(function(j){ return j.status!=='Cancelled'; })
+    .sort(function(a,b){ return (b.priority-a.priority) || (b.cost-a.cost); })
+    .slice(0,10).map(function(j){
+      const remaining = j.finish ? daysBetween(now, j.finish) : 0;
+      return {
+        kks: j.kks || '-', wo: j.wo || ('JOB-'+(j.no||'—')), desc: j.desc, owner: j.owner,
+        progress: j.progress, status: j.status, remaining: remaining,
+        priority: j.priority===3?'Critical': j.priority===2?'High':'Medium'
+      };
+    });
+
+  const ganttGroups = {};
+  datedJobs.forEach(function(j){
+    if(!ganttGroups[j.dept]) ganttGroups[j.dept]={name:j.dept, start:j.start, end:j.finish, jobs:[], critical:false};
+    const g=ganttGroups[j.dept];
+    if(j.start<g.start) g.start=j.start;
+    if(j.finish>g.end) g.end=j.finish;
+    g.jobs.push(j);
+    if(j.priority===3) g.critical=true;
+  });
+  const GANTT_ITEMS = Object.values(ganttGroups).sort(function(a,b){ return b.jobs.length-a.jobs.length; }).slice(0,6).map(function(g){
+    const avgProgress = Math.round(g.jobs.reduce(function(s,j){ return s+j.progress; },0)/g.jobs.length);
+    return { name:g.name+' ('+g.jobs.length+' jobs)', start:g.start.toISOString().slice(0,10), end:g.end.toISOString().slice(0,10), critical:g.critical, progress:avgProgress };
+  });
+
+  const BUDGET = { material:budgetMaterial, labor:budgetLabor, ot:budgetOT, total:budgetTotal, spent:budgetSpent };
+  const BUDGET_ITEMS = [
+    {name:"Material", value:BUDGET.material, color:"#4F46E5"},
+    {name:"Labor", value:BUDGET.labor, color:"#059669"},
+    {name:"OT", value:BUDGET.ot, color:"#F59E0B"},
+  ];
+
+  const ALERTS = [];
+  jobs.filter(function(j){ return j.priority===3 && j.status!=='Cancelled'; }).slice(0,4).forEach(function(j){
+    ALERTS.push({type:'critical', title:j.desc, detail:'งานลำดับความสำคัญสูง (Non-routine ES) — '+j.dept, kks:j.kks||'-'});
+  });
+  jobs.filter(function(j){ return j.status!=='Cancelled' && !j.decisionRaw; }).slice(0,4).forEach(function(j){
+    ALERTS.push({type:'missing', title:j.desc, detail:'ยังไม่ได้กำหนดผู้รับผิดชอบ (NIS / Outsource / Area)', kks:j.kks||'-'});
+  });
+  jobs.filter(function(j){ return j.start && j.status==='Not Started' && daysBetween(now,j.start)>=0 && daysBetween(now,j.start)<=7; }).slice(0,4).forEach(function(j){
+    ALERTS.push({type:'near', title:j.desc, detail:'กำหนดเริ่มงานในอีก '+daysBetween(now,j.start)+' วัน', kks:j.kks||'-'});
+  });
+  jobs.filter(function(j){ return j.status==='In Progress' && !j.decisionRaw; }).slice(0,3).forEach(function(j){
+    ALERTS.push({type:'overdue', title:j.desc, detail:'อยู่ในช่วงดำเนินงานแต่ยังไม่ระบุผู้รับผิดชอบ', kks:j.kks||'-'});
+  });
+
+  const topCost = jobs.slice().sort(function(a,b){ return b.cost-a.cost; })[0];
+  const soonest = jobs.filter(function(j){ return j.start && j.status==='Not Started'; }).sort(function(a,b){ return a.start-b.start; })[0];
+  const topDept = WORK_CATEGORY[0];
+  const outsourceCount = resCounts['Outsource']||0;
+  const pendingCount = jobs.filter(function(j){ return j.status!=='Cancelled' && !j.decisionRaw; }).length;
+  const ACTIVITIES = [
+    topCost ? {type:'material', title:'Highest Budget Job', detail:topCost.desc+' — ฿'+formatCompact(topCost.cost), user:topCost.dept, time:topCost.kks||'-'} : null,
+    soonest ? {type:'update', title:'Next Job to Start', detail:soonest.desc, user:soonest.dept, time: soonest.start? soonest.start.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '-'} : null,
+    topDept ? {type:'inspection', title:'Busiest Department', detail: topDept.category+' — '+topDept.jobs+' jobs', user:'Work Category', time:'Live'} : null,
+    {type:'outsource', title:'Outsourced Jobs', detail: outsourceCount+' งานมอบหมายให้ผู้รับเหมาภายนอก', user:'Resource Allocation', time:'Live'},
+    {type:'approval', title:'Pending Decisions', detail: pendingCount+' งานยังไม่ระบุผู้รับผิดชอบ', user:'Action Required', time:'Live'},
+  ].filter(Boolean);
+
+  const KPI_DEFS = [
+    {label:"Total Jobs", value:KPIS.totalJobs, icon:'<path d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h4"/><rect x="9" y="3" width="12" height="14" rx="2"/><path d="M13 8h4"/><path d="M13 12h4"/>', trend:KPIS.cancelled+" cancelled (included)", tone:"primary", pct:100},
+    {label:"Completed", value:KPIS.completed, icon:'<path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', trend: (KPIS.totalJobs? Math.round(KPIS.completed/KPIS.totalJobs*100):0)+"% of total jobs", tone:"success", pct: KPIS.totalJobs? KPIS.completed/KPIS.totalJobs*100:0},
+    {label:"In Progress", value:KPIS.inProgress, icon:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>', trend: (KPIS.totalJobs? Math.round(KPIS.inProgress/KPIS.totalJobs*100):0)+"% of total jobs", tone:"secondary", pct: KPIS.totalJobs? KPIS.inProgress/KPIS.totalJobs*100:0},
+    {label:"Not Started", value:KPIS.notStarted, icon:'<circle cx="12" cy="12" r="10" stroke-dasharray="4 3"/>', trend: (KPIS.totalJobs? Math.round(KPIS.notStarted/KPIS.totalJobs*100):0)+"% of total jobs", tone:"slate", pct: KPIS.totalJobs? KPIS.notStarted/KPIS.totalJobs*100:0},
+    {label:"Critical Jobs", value:KPIS.criticalJobs, icon:'<path d="M12 9v4"/><path d="M12 17h.01"/><path d="m21.7 16.3-8-15a2 2 0 0 0-3.4 0l-8 15A2 2 0 0 0 4 19h16a2 2 0 0 0 1.7-2.7Z"/>', trend: (KPIS.totalJobs? Math.round(KPIS.criticalJobs/KPIS.totalJobs*100):0)+"% critical attention", tone:"danger", pct: KPIS.totalJobs? KPIS.criticalJobs/KPIS.totalJobs*100:0},
+    {label:"Budget", value:KPIS.budgetSpent, display:function(v){ return "฿"+formatCompact(v); }, icon:'<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M16 12h.01"/><path d="M2 10h20"/>', trend:"Spent ฿"+formatCompact(KPIS.budgetSpent)+" of ฿"+formatCompact(KPIS.budgetTotal), tone:"violet", pct: KPIS.budgetTotal? KPIS.budgetSpent/KPIS.budgetTotal*100:0},
+    {label:"Remaining Days", value:KPIS.remainingDays, suffix:" Days", icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14v3"/><path d="m10.5 15.5 1.5 1.5 1.5-1.5"/>', trend:"Until shutdown end", tone:"warning", pct: totalDays? KPIS.remainingDays/totalDays*100:0},
+  ];
+
+  return { PROJECT, KPIS, WORK_STATUS, DAILY_PROGRESS, ALERTS, WORK_CATEGORY, RESOURCE_PIE, CRITICAL_JOBS, GANTT_ITEMS, BUDGET, BUDGET_ITEMS, ACTIVITIES, KPI_DEFS, minStart, maxFinish, totalDays };
+}
+
+/* ============ RENDER ALL SECTIONS FROM MODEL ============ */
+function renderAll(model){
+  const KPIS=model.KPIS, WORK_STATUS=model.WORK_STATUS, DAILY_PROGRESS=model.DAILY_PROGRESS,
+        ALERTS=model.ALERTS, WORK_CATEGORY=model.WORK_CATEGORY, RESOURCE_PIE=model.RESOURCE_PIE,
+        CRITICAL_JOBS=model.CRITICAL_JOBS, GANTT_ITEMS=model.GANTT_ITEMS, BUDGET=model.BUDGET,
+        BUDGET_ITEMS=model.BUDGET_ITEMS, ACTIVITIES=model.ACTIVITIES, KPI_DEFS=model.KPI_DEFS,
+        PROJECT=model.PROJECT;
+
+  document.querySelector('.tb-title p').textContent = 'Overview of shutdown maintenance · Y26QSD1PP9 · '+PROJECT.rangeLabel;
+
+  /* Sidebar progress widget */
+  (function(){
+    const pct = KPIS.totalJobs ? Math.round(KPIS.completed/KPIS.totalJobs*100) : 0;
+    const r = 18, c = 2*Math.PI*r;
+    const offset = c - (pct/100)*c;
+    document.getElementById('sbWidget').innerHTML =
+      '<div class="sb-widget-top">'+
+        '<div class="ring-wrap"><svg width="46" height="46" viewBox="0 0 46 46">'+
+          '<circle cx="23" cy="23" r="'+r+'" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="4.5"/>'+
+          '<circle cx="23" cy="23" r="'+r+'" fill="none" stroke="url(#ringGrad)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+c+'" id="sbRingProgress"/>'+
+          '<defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3B5BC4"/><stop offset="100%" stop-color="#14A398"/></linearGradient></defs>'+
+        '</svg><div class="pct">'+pct+'%</div></div>'+
+        '<div class="sb-widget-text"><p class="l">Project</p><p class="v">Y26QSD1PP9</p><p class="d">Shutdown Maintenance</p></div>'+
+      '</div>';
+    setTimeout(function(){ const el=document.getElementById('sbRingProgress'); if(el){ el.style.transition='stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1)'; el.style.strokeDashoffset = offset; } }, 300);
+  })();
+
+  /* KPI CARDS */
+  document.getElementById('kpiGrid').innerHTML = KPI_DEFS.map(function(k,i){
+    const t = TONE[k.tone];
+    return '<div class="card kpi-card" style="animation:riseIn .5s ease forwards;animation-delay:'+(i*0.05)+'s;opacity:0;">'+
+      '<div class="kpi-top"><div class="kpi-icon" style="background:'+t.grad+';box-shadow:0 8px 18px -6px '+t.fg+'66">'+icon(k.icon,'width="18" height="18"')+'</div><span class="kpi-label">'+k.label+'</span></div>'+
+      '<p class="kpi-value num" id="kpi-val-'+i+'">0</p>'+
+      '<p class="kpi-trend" style="color:'+t.fg+'">'+k.trend+'</p>'+
+      '<div class="progress-track"><div class="progress-fill" id="kpi-bar-'+i+'" style="background:'+t.grad+'"></div></div>'+
     '</div>';
-  setTimeout(()=>{ const el=document.getElementById('sbRingProgress'); if(el){ el.style.transition='stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1)'; el.style.strokeDashoffset = offset; } }, 300);
-})();
+  }).join('');
 
-document.getElementById('sbCollapseBtn').addEventListener('click', ()=>{
+  KPI_DEFS.forEach(function(k,i){
+    const el = document.getElementById('kpi-val-'+i);
+    if(k.display){
+      let start=null; const duration=1300;
+      function step(ts){ if(!start) start=ts; const p=Math.min(1,(ts-start)/duration); const eased=1-Math.pow(1-p,3);
+        el.textContent = k.display(eased*k.value); if(p<1) requestAnimationFrame(step); }
+      requestAnimationFrame(step);
+    } else {
+      animateNum(el, k.value, 0, "", k.suffix||"", 1300);
+    }
+    setTimeout(function(){ document.getElementById('kpi-bar-'+i).style.width = k.pct+"%"; }, 200);
+  });
+
+  /* WORK STATUS DONUT */
+  (function(){
+    const total = WORK_STATUS.reduce(function(s,d){ return s+d.value; },0) || 1;
+    let acc=0;
+    const stops = WORK_STATUS.map(function(d){ const start=acc/total*360; acc+=d.value; const end=acc/total*360; return d.color+' '+start.toFixed(2)+'deg '+end.toFixed(2)+'deg'; }).join(', ');
+    document.getElementById('statusDonut').style.background = 'conic-gradient('+stops+')';
+    document.getElementById('statusPct').textContent = Math.round(WORK_STATUS[0].value/total*100)+"%";
+    document.getElementById('statusLegend').innerHTML = WORK_STATUS.map(function(d){
+      return '<div class="legend-item"><span class="legend-dot" style="background:'+d.color+'"></span><span class="legend-name">'+d.name+'</span><span class="legend-val">'+d.value+'</span></div>';
+    }).join('');
+  })();
+
+  /* DAILY PROGRESS CHART */
+  (function(){
+    const svg = document.getElementById('progressChart');
+    const W=600,H=266, padL=34, padR=10, padT=14, padB=24;
+    const innerW=W-padL-padR, innerH=H-padT-padB;
+    const maxVal = Math.max(1, Math.max.apply(null, DAILY_PROGRESS.map(function(d){ return d.plan; })));
+    const n = DAILY_PROGRESS.length;
+    const x = function(i){ return padL + (n>1 ? (i/(n-1)) : 0)*innerW; };
+    const y = function(v){ return padT + innerH - (v/maxVal)*innerH; };
+
+    const planPts = DAILY_PROGRESS.map(function(d,i){ return x(i)+','+y(d.plan); }).join(' ');
+    const actualIdxs = []; DAILY_PROGRESS.forEach(function(d,i){ if(d.actual!=null) actualIdxs.push(i); });
+    const hasActual = actualIdxs.length>0;
+    const actualPts = actualIdxs.map(function(i){ return x(i)+','+y(DAILY_PROGRESS[i].actual); }).join(' ');
+    const lastActualIdx = hasActual ? actualIdxs[actualIdxs.length-1] : -1;
+
+    const planArea = 'M'+x(0)+','+ (padT+innerH) +' L'+planPts.split(' ').join(' L')+' L'+x(n-1)+','+(padT+innerH)+' Z';
+    const actualArea = hasActual ? ('M'+x(actualIdxs[0])+','+(padT+innerH)+' L'+actualPts.split(' ').join(' L')+' L'+x(lastActualIdx)+','+(padT+innerH)+' Z') : '';
+
+    let grid = '';
+    for(let g=0; g<=4; g++){
+      const gy = padT + innerH - (g/4)*innerH;
+      grid += '<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--border)" stroke-dasharray="3 5"/>';
+      grid += '<text x="4" y="'+(gy+3)+'" class="axis-label">'+Math.round(maxVal*g/4)+'</text>';
+    }
+    let xlabels='';
+    DAILY_PROGRESS.forEach(function(d,i){ if(i%3===0) xlabels += '<text x="'+x(i)+'" y="'+(H-6)+'" class="axis-label" text-anchor="middle">'+d.day+'</text>'; });
+
+    const now = new Date();
+    const todayIdx = DAILY_PROGRESS.findIndex(function(d){ return d.date.toDateString()===now.toDateString(); });
+    const todayLine = todayIdx>=0 ? ('<line x1="'+x(todayIdx)+'" y1="'+padT+'" x2="'+x(todayIdx)+'" y2="'+(padT+innerH)+'" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="4 3"/>') : '';
+
+    svg.innerHTML =
+      '<defs>'+
+        '<linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1E3A8A" stop-opacity="0.18"/><stop offset="100%" stop-color="#1E3A8A" stop-opacity="0"/></linearGradient>'+
+        '<linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0F766E" stop-opacity="0.38"/><stop offset="100%" stop-color="#0F766E" stop-opacity="0"/></linearGradient>'+
+      '</defs>'+
+      grid + xlabels + todayLine +
+      '<path d="'+planArea+'" fill="url(#pg)"/>'+
+      '<polyline points="'+planPts+'" fill="none" stroke="#1E3A8A" stroke-width="2"/>'+
+      (hasActual ? ('<path d="'+actualArea+'" fill="url(#ag)"/><polyline points="'+actualPts+'" fill="none" stroke="#0F766E" stroke-width="2.5"/><circle cx="'+x(lastActualIdx)+'" cy="'+y(DAILY_PROGRESS[lastActualIdx].actual)+'" r="4.5" fill="#0F766E" stroke="#fff" stroke-width="2"/>') : '');
+
+    const tt = document.getElementById('chartTooltip');
+    if(hasActual){
+      const leftPct = (x(lastActualIdx)/W*100).toFixed(2)+'%';
+      const topPct = (y(DAILY_PROGRESS[lastActualIdx].actual)/H*100).toFixed(2)+'%';
+      tt.style.left = leftPct; tt.style.top = topPct;
+      tt.innerHTML = DAILY_PROGRESS[lastActualIdx].actual+' Jobs<div class="sub">'+(KPIS.totalJobs? Math.round(DAILY_PROGRESS[lastActualIdx].actual/KPIS.totalJobs*100):0)+'% Complete So Far</div>';
+      setTimeout(function(){ tt.style.opacity=1; }, 900);
+    } else {
+      tt.style.opacity = 0;
+    }
+  })();
+
+  /* ALERT PANEL */
+  (function(){
+    const counts = {};
+    ALERTS.forEach(function(a){ counts[a.type]=(counts[a.type]||0)+1; });
+    document.getElementById('alertSummary').innerHTML = Object.keys(ALERT_CFG).map(function(t){
+      const c=ALERT_CFG[t];
+      return '<div class="alert-sum-item" style="background:'+c.bg+'"><div class="alert-sum-icon" style="background:'+c.color+';color:#fff">'+icon(c.icon,'width="14" height="14"')+'</div><div><p class="n" style="color:'+c.color+'">'+(counts[t]||0)+'</p><p class="l" style="color:'+c.color+'">'+c.label+'</p></div></div>';
+    }).join('');
+    document.getElementById('alertList').innerHTML = ALERTS.length ? ALERTS.map(function(a){
+      const c = ALERT_CFG[a.type];
+      return '<div class="alert-row"><div class="alert-icon" style="background:'+c.bg+';color:'+c.color+'">'+icon(c.icon,'width="14" height="14"')+'</div>'+
+        '<div style="min-width:0"><p class="alert-title">'+a.title+'</p><p class="alert-detail">'+a.detail+'</p><p class="alert-kks">'+a.kks+'</p></div></div>';
+    }).join('') : '<p style="color:var(--text-faint);font-size:12px;padding:10px;">ไม่มีรายการแจ้งเตือนในขณะนี้</p>';
+    const badgeTop = document.getElementById('alertBadgeTop');
+    if(badgeTop) badgeTop.textContent = ALERTS.length;
+  })();
+
+  /* WORK CATEGORY BARS */
+  (function(){
+    const maxJobs = Math.max(1, Math.max.apply(null, WORK_CATEGORY.map(function(c){ return c.jobs; })));
+    document.getElementById('categoryBars').innerHTML = WORK_CATEGORY.map(function(c,i){
+      return '<div class="bar-row"><div class="bar-icon" style="background:'+c.color+'">'+icon(c.icon,'width="13" height="13"')+'</div><div class="bar-label">'+c.category+'</div>'+
+      '<div class="bar-track"><div class="bar-fill" id="cat-bar-'+i+'" style="background:'+c.color+'"></div></div>'+
+      '<div class="bar-val">'+c.jobs+'</div></div>';
+    }).join('');
+    WORK_CATEGORY.forEach(function(c,i){ setTimeout(function(){ const el=document.getElementById('cat-bar-'+i); if(el) el.style.width = (c.jobs/maxJobs*100)+"%"; }, 250); });
+  })();
+
+  /* RESOURCE PIE */
+  (function(){
+    const total = RESOURCE_PIE.reduce(function(s,d){ return s+d.value; },0) || 1;
+    let acc=0;
+    const stops = RESOURCE_PIE.map(function(d){ const start=acc/total*360; acc+=d.value; const end=acc/total*360; return d.color+' '+start.toFixed(2)+'deg '+end.toFixed(2)+'deg'; }).join(', ');
+    document.getElementById('resourcePie').style.background = 'conic-gradient('+stops+')';
+    animateNum(document.getElementById('resourceTotal'), KPIS.totalJobs, 0, "", "", 1300);
+    document.getElementById('resourceLegend').innerHTML = RESOURCE_PIE.map(function(d){
+      return '<div class="pie-legend-item"><span class="legend-dot" style="background:'+d.color+'"></span>'+d.name+' ('+d.value+' · '+Math.round(d.value/total*100)+'%)</div>';
+    }).join('');
+  })();
+
+  /* CRITICAL JOBS TABLE */
+  (function(){
+    const statusBadge = {"Completed":"success","In Progress":"secondary","Cancelled":"slate","Not Started":"slate"};
+    const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
+    document.getElementById('jobsTable').innerHTML = CRITICAL_JOBS.length ? CRITICAL_JOBS.map(function(j){
+      return '<tr><td class="mono" style="color:var(--text-faint)">'+j.kks+'</td>'+
+      '<td class="mono" style="color:var(--primary);font-weight:700">'+j.wo+'</td>'+
+      '<td class="job-desc">'+j.desc+'</td>'+
+      '<td style="color:var(--text-muted);white-space:nowrap;font-weight:500">'+j.owner+'</td>'+
+      '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
+      '<td><span class="badge badge-'+(statusBadge[j.status]||'slate')+'">'+j.status+'</span></td>'+
+      '<td style="text-align:center;font-weight:800;'+(j.remaining<0?'color:var(--danger)':'')+'">'+(j.remaining<0 ? Math.abs(j.remaining)+'d late' : j.remaining+'d')+'</td>'+
+      '<td><span class="badge badge-'+priorityBadge[j.priority]+'">'+j.priority+'</span></td></tr>';
+    }).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--text-faint);padding:20px;">ไม่มีข้อมูลงาน</td></tr>';
+  })();
+
+  /* GANTT */
+  (function(){
+    const totalDays = model.totalDays;
+    const shutdownStart = model.minStart, shutdownEnd = model.maxFinish;
+    const now = new Date();
+    const todayOffset = Math.min(totalDays, Math.max(0, daysBetween(shutdownStart, now)));
+    const todayPct = totalDays ? todayOffset/totalDays*100 : 0;
+    const todayInRange = now >= shutdownStart && now <= shutdownEnd;
+
+    const days = [];
+    for(let i=0;i<=totalDays;i++){
+      const d = new Date(shutdownStart); d.setDate(d.getDate()+i);
+      days.push({ date:d, month:d.toLocaleString('en-US',{month:'long'}), day:d.getDate() });
+    }
+    const months = [];
+    days.forEach(function(d){ const last = months[months.length-1]; if(last && last.month===d.month) last.count++; else months.push({month:d.month, year:d.date.getFullYear(), count:1}); });
+
+    document.getElementById('ganttWrap').innerHTML =
+      '<div class="gantt-ruler">'+ months.map(function(m){ return '<div class="gantt-month" style="width:'+(m.count/days.length*100)+'%">'+m.month+' '+m.year+'</div>'; }).join('') +'</div>'+
+      '<div class="gantt-days">'+ days.map(function(d){ return '<div class="gantt-day" style="width:'+(100/days.length)+'%">'+d.day+'</div>'; }).join('') +'</div>'+
+      '<div style="position:relative">'+
+        (todayInRange ? ('<div class="gantt-today" style="left:calc('+todayPct+'% + 162px)"><div class="tag">Today · Day '+todayOffset+'</div></div>') : '')+
+        GANTT_ITEMS.map(function(it){
+          const startOffset = daysBetween(shutdownStart, it.start);
+          const dur = Math.max(1, daysBetween(it.start, it.end));
+          const leftPct = totalDays ? startOffset/totalDays*100 : 0;
+          const widthPct = totalDays ? dur/totalDays*100 : 0;
+          return '<div class="gantt-row"><div class="gantt-label">'+it.name+'</div>'+
+            '<div class="gantt-track"><div class="gantt-bar" data-w="'+widthPct+'" style="left:'+leftPct+'%;background:'+(it.critical?'linear-gradient(90deg,#F87171,#DC2626)':'linear-gradient(90deg,var(--grad-from),var(--grad-to))')+';">'+it.progress+'%</div></div></div>';
+        }).join('') +
+      '</div>';
+
+    setTimeout(function(){ document.querySelectorAll('.gantt-bar').forEach(function(b){ b.style.width = b.getAttribute('data-w')+'%'; }); }, 300);
+  })();
+
+  /* BUDGET SUMMARY */
+  (function(){
+    const total = BUDGET.total || 1;
+    let acc=0;
+    const stops = BUDGET_ITEMS.map(function(d){ const start=acc/total*360; acc+=d.value; const end=acc/total*360; return d.color+' '+start.toFixed(2)+'deg '+end.toFixed(2)+'deg'; }).join(', ');
+    document.getElementById('budgetDonut').style.background = 'conic-gradient('+stops+')';
+    document.getElementById('budgetTotalCenter').textContent = '฿'+formatCompact(BUDGET.total);
+    document.getElementById('budgetItems').innerHTML = BUDGET_ITEMS.map(function(d){
+      return '<div class="budget-item"><div class="budget-item-head"><span class="l"><span class="dot" style="background:'+d.color+'"></span>'+d.name+'</span><span class="v">฿'+formatCompact(d.value)+' <span style="color:var(--text-faint);font-weight:600">('+Math.round(d.value/total*100)+'%)</span></span></div>'+
+      '<div class="progress-track" style="margin:0"><div class="progress-fill" style="background:'+d.color+';width:'+(d.value/total*100)+'%"></div></div></div>';
+    }).join('');
+    const remaining = BUDGET.total-BUDGET.spent;
+    const stats = [
+      {l:"Spent", v:"฿"+formatCompact(BUDGET.spent), sub:Math.round(BUDGET.spent/total*100)+"%", color:"var(--primary)"},
+      {l:"Remaining", v:"฿"+formatCompact(remaining), sub:Math.round(remaining/total*100)+"%", color:"var(--secondary)"},
+      {l:"Total Planned", v:"฿"+formatCompact(BUDGET.total), sub:"100%", color:"var(--warning)"},
+    ];
+    document.getElementById('budgetStats').innerHTML = stats.map(function(s){
+      return '<div class="budget-stat"><p class="l">'+s.l+'</p><p class="v" style="color:'+s.color+'">'+s.v+'</p><p class="l" style="margin-top:1px">'+s.sub+'</p></div>';
+    }).join('');
+  })();
+
+  /* ACTIVITIES / HIGHLIGHTS */
+  (function(){
+    document.getElementById('activityGrid').innerHTML = ACTIVITIES.map(function(a,i){
+      const c = ACT_CFG[a.type];
+      return '<div class="activity-card" style="animation:riseIn .5s ease forwards;animation-delay:'+(i*0.06)+'s;opacity:0;">'+
+        '<div class="activity-icon" style="background:'+c.bg+';color:'+c.color+'">'+icon(c.icon,'width="15" height="15"')+'</div>'+
+        '<p class="activity-title">'+a.title+'</p><p class="activity-detail">'+a.detail+'</p>'+
+        '<div class="activity-foot"><span>'+a.user+'</span><span>'+a.time+'</span></div></div>';
+    }).join('');
+  })();
+}
+
+/* ============ BOOT ============ */
+document.getElementById('sbNav').innerHTML = NAV_ITEMS.map(function(n){
+  return '<button class="sb-item'+(n.active?' active':'')+'">'+icon(n.icon)+'<span>'+n.label+'</span></button>';
+}).join('');
+
+document.getElementById('sbCollapseBtn').addEventListener('click', function(){
   document.getElementById('sidebar').classList.toggle('collapsed');
 });
 
-/* dark mode */
 const darkRow = document.getElementById('darkToggleRow');
 const themeLabel = document.getElementById('themeLabel');
-darkRow.addEventListener('click', ()=>{
+darkRow.addEventListener('click', function(){
   document.documentElement.classList.toggle('dark');
   const isDark = document.documentElement.classList.contains('dark');
   themeLabel.innerHTML = icon('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>','width="14" height="14"') + (isDark ? ' Dark' : ' Light');
 });
 
-document.getElementById('exportBtn').addEventListener('click', ()=> window.print());
+document.getElementById('exportBtn').addEventListener('click', function(){ window.print(); });
 
-/* ============ KPI CARDS ============ */
-document.getElementById('kpiGrid').innerHTML = KPI_DEFS.map((k,i)=>{
-  const t = TONE[k.tone];
-  return '<div class="card kpi-card" style="animation:riseIn .5s ease forwards;animation-delay:'+(i*0.05)+'s;opacity:0;">'+
-    '<div class="kpi-top"><div class="kpi-icon" style="background:'+t.grad+';box-shadow:0 8px 18px -6px '+t.fg+'66">'+icon(k.icon,'width="18" height="18"')+'</div><span class="kpi-label">'+k.label+'</span></div>'+
-    '<p class="kpi-value num" id="kpi-val-'+i+'">0</p>'+
-    '<p class="kpi-trend" style="color:'+t.fg+'">'+k.trend+'</p>'+
-    '<div class="progress-track"><div class="progress-fill" id="kpi-bar-'+i+'" style="background:'+t.grad+'"></div></div>'+
-  '</div>';
-}).join('');
-
-KPI_DEFS.forEach((k,i)=>{
-  const el = document.getElementById('kpi-val-'+i);
-  if(k.display){
-    let start=null; const duration=1300;
-    function step(ts){ if(!start) start=ts; const p=Math.min(1,(ts-start)/duration); const eased=1-Math.pow(1-p,3);
-      el.textContent = k.display(eased*k.value); if(p<1) requestAnimationFrame(step); }
-    requestAnimationFrame(step);
-  } else {
-    animateNum(el, k.value, 0, "", k.suffix||"", 1300);
-  }
-  setTimeout(()=>{ document.getElementById('kpi-bar-'+i).style.width = k.pct+"%"; }, 200);
-});
-
-/* ============ WORK STATUS DONUT ============ */
-(function(){
-  const total = WORK_STATUS.reduce((s,d)=>s+d.value,0);
-  let acc=0;
-  const stops = WORK_STATUS.map(d=>{ const start=acc/total*360; acc+=d.value; const end=acc/total*360; return d.color+' '+start.toFixed(2)+'deg '+end.toFixed(2)+'deg'; }).join(', ');
-  document.getElementById('statusDonut').style.background = 'conic-gradient('+stops+')';
-  document.getElementById('statusPct').textContent = Math.round(WORK_STATUS[0].value/total*100)+"%";
-  document.getElementById('statusLegend').innerHTML = WORK_STATUS.map(d=>
-    '<div class="legend-item"><span class="legend-dot" style="background:'+d.color+'"></span><span class="legend-name">'+d.name+'</span><span class="legend-val">'+d.value+'</span></div>'
-  ).join('');
-})();
-
-/* ============ DAILY PROGRESS CHART ============ */
-(function(){
-  const svg = document.getElementById('progressChart');
-  const W=600,H=266, padL=34, padR=10, padT=14, padB=24;
-  const innerW=W-padL-padR, innerH=H-padT-padB;
-  const maxVal = Math.max(...DAILY_PROGRESS.map(d=>d.plan));
-  const n = DAILY_PROGRESS.length;
-  const x = i => padL + (i/(n-1))*innerW;
-  const y = v => padT + innerH - (v/maxVal)*innerH;
-
-  let planPts = DAILY_PROGRESS.map((d,i)=>x(i)+','+y(d.plan)).join(' ');
-  let actualPts = DAILY_PROGRESS.filter(d=>d.actual!=null).map((d,i)=>x(i)+','+y(d.actual)).join(' ');
-  const lastActualIdx = DAILY_PROGRESS.reduce((acc,d,i)=> d.actual!=null ? i : acc, 0);
-
-  const planArea = 'M'+x(0)+','+ (padT+innerH) +' L'+planPts.split(' ').join(' L')+' L'+x(n-1)+','+(padT+innerH)+' Z';
-  const actualArea = 'M'+x(0)+','+(padT+innerH)+' L'+actualPts.split(' ').join(' L')+' L'+x(lastActualIdx)+','+(padT+innerH)+' Z';
-
-  let grid = '';
-  for(let g=0; g<=4; g++){
-    const gy = padT + innerH - (g/4)*innerH;
-    grid += '<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--border)" stroke-dasharray="3 5"/>';
-    grid += '<text x="4" y="'+(gy+3)+'" class="axis-label">'+Math.round(maxVal*g/4)+'</text>';
-  }
-  let xlabels='';
-  DAILY_PROGRESS.forEach((d,i)=>{ if(i%3===0) xlabels += '<text x="'+x(i)+'" y="'+(H-6)+'" class="axis-label" text-anchor="middle">'+d.day+'</text>'; });
-
-  const todayIdx = DAILY_PROGRESS.findIndex(d=>d.day==="5 Aug");
-  const todayLine = todayIdx>=0 ? '<line x1="'+x(todayIdx)+'" y1="'+padT+'" x2="'+x(todayIdx)+'" y2="'+(padT+innerH)+'" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="4 3"/>' : '';
-
-  svg.innerHTML =
-    '<defs>'+
-      '<linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1E3A8A" stop-opacity="0.18"/><stop offset="100%" stop-color="#1E3A8A" stop-opacity="0"/></linearGradient>'+
-      '<linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0F766E" stop-opacity="0.38"/><stop offset="100%" stop-color="#0F766E" stop-opacity="0"/></linearGradient>'+
-    '</defs>'+
-    grid + xlabels + todayLine +
-    '<path d="'+planArea+'" fill="url(#pg)"/>'+
-    '<polyline points="'+planPts+'" fill="none" stroke="#1E3A8A" stroke-width="2"/>'+
-    '<path d="'+actualArea+'" fill="url(#ag)"/>'+
-    '<polyline points="'+actualPts+'" fill="none" stroke="#0F766E" stroke-width="2.5"/>'+
-    '<circle cx="'+x(lastActualIdx)+'" cy="'+y(DAILY_PROGRESS[lastActualIdx].actual)+'" r="4.5" fill="#0F766E" stroke="#fff" stroke-width="2"/>';
-
-  if(todayIdx>=0){
-    const tt = document.getElementById('chartTooltip');
-    const leftPct = (x(todayIdx)/W*100).toFixed(2)+'%';
-    const topPct = (y(DAILY_PROGRESS[todayIdx].actual)/H*100).toFixed(2)+'%';
-    tt.style.left = leftPct; tt.style.top = topPct;
-    tt.innerHTML = DAILY_PROGRESS[todayIdx].actual+' Jobs<div class="sub">'+Math.round(DAILY_PROGRESS[todayIdx].actual/KPIS.totalJobs*100)+'% Complete Today</div>';
-    setTimeout(()=>{ tt.style.opacity=1; }, 900);
-  }
-})();
-
-/* ============ ALERT PANEL ============ */
-(function(){
-  const counts = {};
-  ALERTS.forEach(a=> counts[a.type]=(counts[a.type]||0)+1 );
-  document.getElementById('alertSummary').innerHTML = Object.keys(ALERT_CFG).map(t=>{
-    const c=ALERT_CFG[t];
-    return '<div class="alert-sum-item" style="background:'+c.bg+'"><div class="alert-sum-icon" style="background:'+c.color+';color:#fff">'+icon(c.icon,'width="14" height="14"')+'</div><div><p class="n" style="color:'+c.color+'">'+(counts[t]||0)+'</p><p class="l" style="color:'+c.color+'">'+c.label+'</p></div></div>';
-  }).join('');
-  document.getElementById('alertList').innerHTML = ALERTS.map(a=>{
-    const c = ALERT_CFG[a.type];
-    return '<div class="alert-row"><div class="alert-icon" style="background:'+c.bg+';color:'+c.color+'">'+icon(c.icon,'width="14" height="14"')+'</div>'+
-      '<div style="min-width:0"><p class="alert-title">'+a.title+'</p><p class="alert-detail">'+a.detail+'</p><p class="alert-kks">'+a.kks+'</p></div></div>';
-  }).join('');
-})();
-
-/* ============ WORK CATEGORY BARS ============ */
-(function(){
-  const maxJobs = Math.max(...WORK_CATEGORY.map(c=>c.jobs));
-  document.getElementById('categoryBars').innerHTML = WORK_CATEGORY.map((c,i)=>
-    '<div class="bar-row"><div class="bar-icon" style="background:'+c.color+'">'+icon(c.icon,'width="13" height="13"')+'</div><div class="bar-label">'+c.category+'</div>'+
-    '<div class="bar-track"><div class="bar-fill" id="cat-bar-'+i+'" style="background:'+c.color+'"></div></div>'+
-    '<div class="bar-val">'+c.jobs+'</div></div>'
-  ).join('');
-  WORK_CATEGORY.forEach((c,i)=> setTimeout(()=>{ document.getElementById('cat-bar-'+i).style.width = (c.jobs/maxJobs*100)+"%"; }, 250) );
-})();
-
-/* ============ RESOURCE PIE (donut w/ total in center) ============ */
-(function(){
-  const total = RESOURCE_PIE.reduce((s,d)=>s+d.value,0);
-  let acc=0;
-  const stops = RESOURCE_PIE.map(d=>{ const start=acc/total*360; acc+=d.value; const end=acc/total*360; return d.color+' '+start.toFixed(2)+'deg '+end.toFixed(2)+'deg'; }).join(', ');
-  document.getElementById('resourcePie').style.background = 'conic-gradient('+stops+')';
-  animateNum(document.getElementById('resourceTotal'), KPIS.totalJobs, 0, "", "", 1300);
-  document.getElementById('resourceLegend').innerHTML = RESOURCE_PIE.map(d=>
-    '<div class="pie-legend-item"><span class="legend-dot" style="background:'+d.color+'"></span>'+d.name+' ('+d.value+' · '+Math.round(d.value/total*100)+'%)</div>'
-  ).join('');
-})();
-
-/* ============ CRITICAL JOBS TABLE ============ */
-(function(){
-  const statusBadge = {"Completed":"success","In Progress":"secondary","Delay":"danger","Not Started":"slate"};
-  const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
-  document.getElementById('jobsTable').innerHTML = CRITICAL_JOBS.map(j=>
-    '<tr><td class="mono" style="color:var(--text-faint)">'+j.kks+'</td>'+
-    '<td class="mono" style="color:var(--primary);font-weight:700">'+j.wo+'</td>'+
-    '<td class="job-desc">'+j.desc+'</td>'+
-    '<td style="color:var(--text-muted);white-space:nowrap;font-weight:500">'+j.owner+'</td>'+
-    '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
-    '<td><span class="badge badge-'+statusBadge[j.status]+'">'+j.status+'</span></td>'+
-    '<td style="text-align:center;font-weight:800;'+(j.remaining<0?'color:var(--danger)':'')+'">'+(j.remaining<0 ? Math.abs(j.remaining)+'d late' : j.remaining+'d')+'</td>'+
-    '<td><span class="badge badge-'+priorityBadge[j.priority]+'">'+j.priority+'</span></td></tr>'
-  ).join('');
-})();
-
-/* ============ GANTT (with month/day ruler) ============ */
-(function(){
-  const totalDays = daysBetween(PROJECT.shutdownStart, PROJECT.shutdownEnd);
-  const todayOffset = daysBetween(PROJECT.shutdownStart, PROJECT.today);
-  const todayPct = todayOffset/totalDays*100;
-
-  const days = [];
-  for(let i=0;i<=totalDays;i++){
-    const d = new Date(PROJECT.shutdownStart); d.setDate(d.getDate()+i);
-    days.push({ date:d, month:d.toLocaleString('en-US',{month:'long'}), day:d.getDate() });
-  }
-  const months = [];
-  days.forEach(d=>{ const last = months[months.length-1]; if(last && last.month===d.month) last.count++; else months.push({month:d.month, year:d.date.getFullYear(), count:1}); });
-
-  document.getElementById('ganttWrap').innerHTML =
-    '<div class="gantt-ruler">'+ months.map(m=> '<div class="gantt-month" style="width:'+(m.count/days.length*100)+'%">'+m.month+' '+m.year+'</div>').join('') +'</div>'+
-    '<div class="gantt-days">'+ days.map(d=> '<div class="gantt-day" style="width:'+(100/days.length)+'%">'+d.day+'</div>').join('') +'</div>'+
-    '<div style="position:relative">'+
-      '<div class="gantt-today" style="left:calc('+todayPct+'% + 162px)"><div class="tag">Today · Day '+todayOffset+'</div></div>'+
-      GANTT_ITEMS.map((it,i)=>{
-        const startOffset = daysBetween(PROJECT.shutdownStart, it.start);
-        const dur = daysBetween(it.start, it.end);
-        const leftPct = startOffset/totalDays*100;
-        const widthPct = dur/totalDays*100;
-        return '<div class="gantt-row"><div class="gantt-label">'+it.name+'</div>'+
-          '<div class="gantt-track"><div class="gantt-bar" data-w="'+widthPct+'" style="left:'+leftPct+'%;background:'+(it.critical?'linear-gradient(90deg,#F87171,#DC2626)':'linear-gradient(90deg,var(--grad-from),var(--grad-to))')+';">'+it.progress+'%</div></div></div>';
-      }).join('') +
+function showError(err){
+  document.getElementById('skeletonWrap').innerHTML =
+    '<div class="card" style="padding:44px 30px;text-align:center;">'+
+      '<p style="font-weight:800;font-size:16px;color:var(--danger);margin:0 0 8px;">โหลดข้อมูลสดจาก Google Sheets ไม่สำเร็จ</p>'+
+      '<p style="color:var(--text-muted);font-size:13px;margin:0 0 18px;max-width:520px;margin-left:auto;margin-right:auto;">'+
+        (err && err.message ? err.message : 'กรุณาตรวจสอบว่า Sheet ตั้งค่าแชร์เป็น "Anyone with the link" แล้วลองใหม่อีกครั้ง')+
+      '</p>'+
+      '<button class="btn-export" style="margin:0 auto;" onclick="location.reload()">'+icon('<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>','width="15" height="15"')+' ลองโหลดใหม่</button>'+
     '</div>';
+}
 
-  setTimeout(()=>{ document.querySelectorAll('.gantt-bar').forEach(b=>{ b.style.width = b.getAttribute('data-w')+'%'; }); }, 300);
-})();
-
-/* ============ BUDGET SUMMARY ============ */
-(function(){
-  const total = BUDGET.total;
-  let acc=0;
-  const stops = BUDGET_ITEMS.map(d=>{ const start=acc/total*360; acc+=d.value; const end=acc/total*360; return d.color+' '+start.toFixed(2)+'deg '+end.toFixed(2)+'deg'; }).join(', ');
-  document.getElementById('budgetDonut').style.background = 'conic-gradient('+stops+')';
-  document.getElementById('budgetTotalCenter').textContent = '฿'+formatCompact(BUDGET.total);
-  document.getElementById('budgetItems').innerHTML = BUDGET_ITEMS.map(d=>
-    '<div class="budget-item"><div class="budget-item-head"><span class="l"><span class="dot" style="background:'+d.color+'"></span>'+d.name+'</span><span class="v">฿'+formatCompact(d.value)+' <span style="color:var(--text-faint);font-weight:600">('+Math.round(d.value/total*100)+'%)</span></span></div>'+
-    '<div class="progress-track" style="margin:0"><div class="progress-fill" style="background:'+d.color+';width:'+(d.value/total*100)+'%"></div></div></div>'
-  ).join('');
-  const remaining = BUDGET.total-BUDGET.spent;
-  const stats = [
-    {l:"Spent", v:"฿"+formatCompact(BUDGET.spent), sub:Math.round(BUDGET.spent/BUDGET.total*100)+"%", color:"var(--primary)"},
-    {l:"Remaining", v:"฿"+formatCompact(remaining), sub:Math.round(remaining/BUDGET.total*100)+"%", color:"var(--secondary)"},
-    {l:"Forecast", v:"฿"+formatCompact(BUDGET.total*0.98), sub:"98%", color:"var(--warning)"},
-  ];
-  document.getElementById('budgetStats').innerHTML = stats.map(s=>
-    '<div class="budget-stat"><p class="l">'+s.l+'</p><p class="v" style="color:'+s.color+'">'+s.v+'</p><p class="l" style="margin-top:1px">'+s.sub+'</p></div>'
-  ).join('');
-})();
-
-/* ============ ACTIVITIES (horizontal cards) ============ */
-(function(){
-  document.getElementById('activityGrid').innerHTML = ACTIVITIES.map((a,i)=>{
-    const c = ACT_CFG[a.type];
-    return '<div class="activity-card" style="animation:riseIn .5s ease forwards;animation-delay:'+(i*0.06)+'s;opacity:0;">'+
-      '<div class="activity-icon" style="background:'+c.bg+';color:'+c.color+'">'+icon(c.icon,'width="15" height="15"')+'</div>'+
-      '<p class="activity-title">'+a.title+'</p><p class="activity-detail">'+a.detail+'</p>'+
-      '<div class="activity-foot"><span>'+a.user+'</span><span>'+a.time+'</span></div></div>';
-  }).join('');
-})();
-
-/* ============ SKELETON -> CONTENT REVEAL ============ */
-setTimeout(()=>{
-  document.getElementById('skeletonWrap').style.display='none';
-  document.getElementById('mainContent').style.display='flex';
-}, 650);
-
+function boot(){
+  fetchSheetRows().then(function(rows){
+    if(!rows.length) throw new Error('ไม่พบข้อมูลงานใน Sheet (0 แถว) — ตรวจสอบว่าเลือก Sheet/Tab ที่ถูกต้อง');
+    const model = buildModel(rows);
+    renderAll(model);
+    document.getElementById('skeletonWrap').style.display='none';
+    document.getElementById('mainContent').style.display='flex';
+  }).catch(function(err){
+    console.error(err);
+    showError(err);
+  });
+}
+boot();
 </script>
 </body>
 </html>
