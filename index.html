@@ -2544,7 +2544,7 @@ function loadPinned(id, gid){
   performLoad(id, gid).then(function(){
     showDashboard();
   }).catch(function(err){
-    console.error(err);
+    console.error(err); 
     showLanding();
     showLandingError(err && err.message ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
   });
