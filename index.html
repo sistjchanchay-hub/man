@@ -358,6 +358,13 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 .pin-remove:hover{color:#fff;background:rgba(255,255,255,.12);}
 .sidebar.collapsed .pin-remove{display:none;}
 .sb-nav-divider{height:1px;background:rgba(255,255,255,.08);margin:8px 12px;}
+
+.worklist-summary{display:flex;gap:8px;flex-wrap:wrap;}
+.wl-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;}
+.plan-add-select{width:100%;height:32px;border-radius:9px;border:1px solid var(--border);background:var(--card-solid);color:var(--text);font-size:11.5px;font-weight:700;padding:0 8px;outline:none;cursor:pointer;transition:.15s;}
+.plan-add-select:focus{box-shadow:0 0 0 3px rgba(30,58,138,.12);}
+.plan-add-select.tag-plan{color:#2563EB;border-color:rgba(37,99,235,.35);background:#EAF2FE;}
+.plan-add-select.tag-add{color:#D97706;border-color:rgba(217,119,6,.35);background:#FEF6E7;}
 </style>
 <body>
 
@@ -919,6 +926,22 @@ const SHUTDOWN_TEMPLATE_HTML = `
           </div>
         </div>
       </section>
+
+      <section class="section" style="animation-delay:.26s">
+        <div class="card">
+          <div class="card-head">
+            <h3 class="card-title">Work List — All Jobs</h3>
+            <div class="worklist-summary" id="worklistSummary"></div>
+          </div>
+          <div class="card-body table-wrap">
+            <input class="table-search" id="worklistSearch" placeholder="ค้นหา KKS, รายละเอียด, แผนก...">
+            <table>
+              <thead><tr><th>No.</th><th>KKS</th><th>Description</th><th>Department</th><th>Status</th><th style="width:120px">Progress</th><th style="width:160px">Plan / Add</th></tr></thead>
+              <tbody id="worklistTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 `;
 
 /* ============================================================ */
@@ -1012,10 +1035,13 @@ function buildShutdownModel(rows){
 
     const owner = [ (r[SD_COL.ACCOUNT_NAME]||'').trim(), (r[SD_COL.RESPONSE_NAME]||'').trim() ].filter(Boolean).join(' / ') || dept;
     const desc = (r[SD_COL.DESC]||'').trim() || '(No description)';
+    const no = (r[SD_COL.NO]||'').trim();
+    const kks = (r[SD_COL.KKS]||'').trim();
 
     return {
-      no:(r[SD_COL.NO]||'').trim(), area:(r[SD_COL.AREA]||'').trim(), dept, classify,
-      kks:(r[SD_COL.KKS]||'').trim(), desc, owner,
+      key: (no||'-')+'|'+(kks||'-')+'|'+desc.slice(0,40),
+      no, area:(r[SD_COL.AREA]||'').trim(), dept, classify,
+      kks, desc, owner,
       wo: (r[SD_COL.WO_AREA]||'').trim() || (r[SD_COL.WO_NIS]||'').trim() || '',
       decisionRaw, resource, status, progress, start, finish, cost, labor, spare, ot, priority
     };
@@ -1151,7 +1177,7 @@ function buildShutdownModel(rows){
     {label:"Remaining Days", value:KPIS.remainingDays, suffix:" Days", icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14v3"/><path d="m10.5 15.5 1.5 1.5 1.5-1.5"/>', trend:"Until shutdown end", tone:"warning", pct: totalDays? KPIS.remainingDays/totalDays*100:0},
   ];
 
-  return { PROJECT, KPIS, WORK_STATUS, DAILY_PROGRESS, ALERTS, WORK_CATEGORY, RESOURCE_PIE, CRITICAL_JOBS, GANTT_ITEMS, BUDGET, BUDGET_ITEMS, ACTIVITIES, KPI_DEFS, minStart, maxFinish, totalDays };
+  return { PROJECT, KPIS, WORK_STATUS, DAILY_PROGRESS, ALERTS, WORK_CATEGORY, RESOURCE_PIE, CRITICAL_JOBS, GANTT_ITEMS, BUDGET, BUDGET_ITEMS, ACTIVITIES, KPI_DEFS, minStart, maxFinish, totalDays, jobs };
 }
 
 /* ---- renderer ---- */
@@ -1395,6 +1421,92 @@ function renderShutdownDashboard(model){
         '<div class="activity-foot"><span>'+a.user+'</span><span>'+a.time+'</span></div></div>';
     }).join('');
   })();
+
+  /* WORK LIST — all jobs, with editable Plan/Add tag (saved locally per sheet) */
+  renderWorkList(model.jobs || []);
+}
+
+/* ============ PLAN/ADD LOCAL TAGGING (per sheet, no backend) ============ */
+function planAddStorageKey(){
+  return 'sheetInsights.planAdd.' + (CURRENT_SHEET ? CURRENT_SHEET.id+'.'+CURRENT_SHEET.gid : 'unknown');
+}
+function getPlanAddMap(){
+  try{
+    const raw = localStorage.getItem(planAddStorageKey());
+    return raw ? (JSON.parse(raw)||{}) : {};
+  }catch(e){ return {}; }
+}
+function setPlanAddValue(jobKey, value){
+  const map = getPlanAddMap();
+  if(value){ map[jobKey] = value; } else { delete map[jobKey]; }
+  try{ localStorage.setItem(planAddStorageKey(), JSON.stringify(map)); }catch(e){}
+}
+
+function renderWorkList(jobs){
+  const tbody = document.getElementById('worklistTableBody');
+  const searchInput = document.getElementById('worklistSearch');
+  const summaryEl = document.getElementById('worklistSummary');
+  if(!tbody || !searchInput) return;
+
+  const statusBadge = {"Completed":"success","In Progress":"secondary","Cancelled":"slate","Not Started":"slate"};
+
+  function updateSummary(){
+    const map = getPlanAddMap();
+    let planN=0, addN=0;
+    jobs.forEach(function(j){ const v=map[j.key]; if(v==='Plan') planN++; else if(v==='Add') addN++; });
+    const unsetN = jobs.length - planN - addN;
+    summaryEl.innerHTML =
+      '<span class="wl-badge" style="background:#EAF2FE;color:#2563EB;">Plan: '+planN+'</span>'+
+      '<span class="wl-badge" style="background:#FEF6E7;color:#D97706;">Add: '+addN+'</span>'+
+      '<span class="wl-badge" style="background:#F1F5F9;color:#64748B;">ยังไม่ระบุ: '+unsetN+'</span>';
+  }
+
+  function renderRows(filter){
+    filter = (filter||'').toLowerCase().trim();
+    const map = getPlanAddMap();
+    let list = jobs;
+    if(filter){
+      list = jobs.filter(function(j){
+        return (j.no+' '+j.kks+' '+j.desc+' '+j.dept).toLowerCase().indexOf(filter)>=0;
+      });
+    }
+    if(!list.length){
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-note">ไม่พบข้อมูลที่ตรงกับคำค้นหา</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(function(j){
+      const val = map[j.key] || '';
+      const tagClass = val==='Plan' ? 'tag-plan' : (val==='Add' ? 'tag-add' : '');
+      return '<tr>'+
+        '<td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.no||'-')+'</td>'+
+        '<td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.kks||'-')+'</td>'+
+        '<td class="job-desc" title="'+escapeHtml(j.desc)+'">'+escapeHtml(j.desc)+'</td>'+
+        '<td style="color:var(--text-muted);white-space:nowrap;font-weight:500">'+escapeHtml(j.dept)+'</td>'+
+        '<td><span class="badge badge-'+(statusBadge[j.status]||'slate')+'">'+j.status+'</span></td>'+
+        '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
+        '<td><select class="plan-add-select '+tagClass+'" data-key="'+encodeURIComponent(j.key)+'">'+
+          '<option value=""'+(val===''?' selected':'')+'>— ยังไม่ระบุ —</option>'+
+          '<option value="Plan"'+(val==='Plan'?' selected':'')+'>Plan</option>'+
+          '<option value="Add"'+(val==='Add'?' selected':'')+'>Add</option>'+
+        '</select></td>'+
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('.plan-add-select').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        const key = decodeURIComponent(sel.dataset.key);
+        setPlanAddValue(key, sel.value);
+        sel.classList.remove('tag-plan','tag-add');
+        if(sel.value==='Plan') sel.classList.add('tag-plan');
+        else if(sel.value==='Add') sel.classList.add('tag-add');
+        updateSummary();
+      });
+    });
+  }
+
+  updateSummary();
+  renderRows('');
+  searchInput.value = '';
+  searchInput.oninput = function(){ renderRows(searchInput.value); };
 }
 
 
@@ -1794,7 +1906,7 @@ function loadPinned(id, gid){
   document.getElementById('mainContent').style.display='none';
   document.getElementById('skeletonWrap').style.display='flex';
   performLoad(id, gid).then(function(){
-    showDashboard(); 
+    showDashboard();
   }).catch(function(err){
     console.error(err);
     showLanding();
