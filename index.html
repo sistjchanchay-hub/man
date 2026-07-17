@@ -1082,11 +1082,15 @@ const SHUTDOWN_TEMPLATE_HTML = `
 
 /* ============ SHUTDOWN TEMPLATE: COLUMN MAP (0-based) ============ */
 const SD_COL = {
-  NO:0, AREA:1, DEPT:2, DEPT_NIS:3, SUBTYPE:4, CLASSIFY:5, KKS:6, DESC:7, ACTIVITY:8,
-  ACCOUNT_NAME:11, RESPONSE_NAME:12, DECISION:14,
-  WO_AREA:26, WO_NIS:27, COST_OT:22,
-  TOTAL_LABOR:39, SPARE:40, TOTAL_COST:41,
-  START:63, FINISH:64,
+  /* NOTE: the live sheet had a "Plan/Add" column inserted at index 2 (between AREA and Department)
+     at some point, which shifted every column below by +1 relative to the original mapping.
+     Re-verified against a full live fetch of the sheet on 2026-07-17 — every field below confirmed
+     against real header text + real data values. */
+  NO:0, AREA:1, PLAN_ADD:2, DEPT:3, DEPT_NIS:4, SUBTYPE:5, CLASSIFY:6, KKS:7, DESC:8, ACTIVITY:9,
+  ACCOUNT_NAME:12, RESPONSE_NAME:13, DECISION:15,
+  WO_AREA:27, WO_NIS:28, COST_OT:23,
+  TOTAL_LABOR:40, SPARE:41, TOTAL_COST:42,
+  START:64, FINISH:65,
 };
 const SHEET_YEAR = 2026; /* shutdown year - update if this template is reused for a future shutdown */
 const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
