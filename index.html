@@ -339,8 +339,32 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 .table-search{width:100%;height:38px;border-radius:11px;border:1px solid var(--border);background:var(--card-solid);padding:0 14px;font-size:12.5px;color:var(--text);outline:none;margin-bottom:12px;}
 .empty-note{color:var(--text-faint);font-size:12px;padding:18px;text-align:center;}
 
-.modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(10,15,28,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;}
-.modal-card{width:100%;max-width:420px;padding:28px;}
+.modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(10,15,28,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;
+  animation:modalBackdropIn .22s ease;}
+@keyframes modalBackdropIn{from{opacity:0;}to{opacity:1;}}
+@keyframes modalPopIn{from{opacity:0;transform:scale(.93) translateY(12px);}to{opacity:1;transform:none;}}
+.modal-card{width:100%;max-width:420px;padding:28px;position:relative;overflow:hidden;
+  animation:modalPopIn .32s cubic-bezier(.2,.9,.3,1.15);}
+.modal-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#6366F1,#A855F7,#EC4899,#6366F1);background-size:200% auto;
+  animation:modalGradFlow 3s linear infinite;z-index:2;}
+@keyframes modalGradFlow{to{background-position:200% center;}}
+.modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card-solid);color:var(--text-muted);cursor:pointer;display:grid;place-items:center;transition:.2s;z-index:3;}
+.modal-close:hover{color:var(--danger);transform:rotate(90deg);border-color:rgba(225,29,72,.3);}
+.detail-modal-card{max-width:760px;max-height:82vh;display:flex;flex-direction:column;padding:0;}
+.detail-modal-head{padding:24px 26px 16px;flex-shrink:0;}
+.detail-modal-head h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.01em;}
+.detail-modal-head p{margin:4px 0 0;font-size:12px;color:var(--text-muted);}
+.detail-modal-body{padding:4px 26px 26px;overflow-y:auto;flex:1;}
+.dm-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.dm-row:last-child{border-bottom:none;}
+.dm-list-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.dm-list-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card-solid);}
+.dm-list-table td{padding:9px 10px;border-bottom:1px solid var(--border);}
+.dm-list-table tr:hover td{background:rgba(30,58,138,.04);}
+.view-all{transition:.2s;display:inline-flex;align-items:center;gap:4px;}
+.view-all:hover{transform:translateX(2px);gap:6px;}
 .modal-title{margin:0 0 6px;font-size:17px;font-weight:800;letter-spacing:-.01em;}
 .modal-desc{margin:0 0 16px;font-size:12.5px;color:var(--text-muted);line-height:1.5;}
 .modal-input{width:100%;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card-solid);padding:0 14px;font-size:13.5px;color:var(--text);outline:none;transition:.2s;box-sizing:border-box;}
@@ -453,6 +477,19 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 
     <main class="content" id="mainContent" style="display:none;">
     </main>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="detailModalBackdrop" style="display:none;">
+  <div class="card modal-card detail-modal-card">
+    <button class="modal-close" id="detailModalCloseBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="detail-modal-head">
+      <h3 id="detailModalTitle">Details</h3>
+      <p id="detailModalSubtitle"></p>
+    </div>
+    <div class="detail-modal-body" id="detailModalBody"></div>
   </div>
 </div>
 
@@ -850,7 +887,7 @@ const SHUTDOWN_TEMPLATE_HTML = `
           </div>
 
           <div class="card">
-            <div class="card-head"><h3 class="card-title">Alert Center</h3><span class="view-all">View All</span></div>
+            <div class="card-head"><h3 class="card-title">Alert Center</h3><span class="view-all" id="viewAllAlerts">View All</span></div>
             <div class="card-body">
               <div class="alert-summary" id="alertSummary"></div>
               <div class="alert-list" id="alertList"></div>
@@ -862,7 +899,7 @@ const SHUTDOWN_TEMPLATE_HTML = `
       <section class="section" style="animation-delay:.1s">
         <div class="row3-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
           <div class="card">
-            <div class="card-head"><h3 class="card-title">Work Category</h3><span class="view-all">View All</span></div>
+            <div class="card-head"><h3 class="card-title">Work Category</h3><span class="view-all" id="viewAllCategory">View All</span></div>
             <div class="card-body" id="categoryBars"></div>
           </div>
           <div class="card">
@@ -879,7 +916,7 @@ const SHUTDOWN_TEMPLATE_HTML = `
 
       <section class="section" style="animation-delay:.14s">
         <div class="card">
-          <div class="card-head"><h3 class="card-title">Top 10 Critical Jobs</h3><span class="view-all">View All</span></div>
+          <div class="card-head"><h3 class="card-title">Top 10 Critical Jobs</h3><span class="view-all" id="viewAllCritical">View All</span></div>
           <div class="card-body table-wrap">
             <table>
               <thead><tr><th>KKS</th><th>WO</th><th>Description</th><th>Owner</th><th style="width:150px">Progress</th><th>Status</th><th style="text-align:center">Remaining</th><th>Priority</th></tr></thead>
@@ -895,7 +932,7 @@ const SHUTDOWN_TEMPLATE_HTML = `
             <h3 class="card-title">Timeline / Gantt Overview</h3>
             <div class="gantt-legend">
               <span class="badge badge-secondary"><span class="legend-dot" style="background:var(--danger);width:7px;height:7px;"></span>Critical Path</span>
-              <span class="view-all">View Full Gantt</span>
+              <span class="view-all" id="viewAllGantt">View Full Gantt</span>
             </div>
           </div>
           <div class="card-body">
@@ -921,7 +958,7 @@ const SHUTDOWN_TEMPLATE_HTML = `
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><h3 class="card-title">Recent Activities</h3><span class="view-all">View All</span></div>
+            <div class="card-head"><h3 class="card-title">Recent Activities</h3><span class="view-all" id="viewAllActivities">View All</span></div>
             <div class="card-body"><div class="activity-grid" id="activityGrid"></div></div>
           </div>
         </div>
@@ -1097,9 +1134,10 @@ function buildShutdownModel(rows){
   const deptIcon = '<path d="m14.7 6.3-3.6 3.6-4-4-1.5 1.5 4 4-3.6 3.6a3 3 0 1 0 3.5 3.5l7.6-7.6a3 3 0 1 0-2.4-4.6Z"/>';
   const deptCounts = {};
   jobs.forEach(function(j){ if(j.status!=='Cancelled'){ deptCounts[j.dept]=(deptCounts[j.dept]||0)+1; } });
-  const WORK_CATEGORY = Object.entries(deptCounts).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8).map(function(e,i){
+  const WORK_CATEGORY_FULL = Object.entries(deptCounts).sort(function(a,b){ return b[1]-a[1]; }).map(function(e,i){
     return { category:e[0], jobs:e[1], color:deptColors[i%deptColors.length], icon:deptIcon };
   });
+  const WORK_CATEGORY = WORK_CATEGORY_FULL.slice(0,8);
 
   const resColors = { NIS:"#059669", Outsource:"#F59E0B", Area:"#4F46E5", Pending:"#94A3B8" };
   const resCounts = {};
@@ -1108,9 +1146,9 @@ function buildShutdownModel(rows){
     return { name: e[0]==='NIS'?'NIS (Internal)':e[0], value:e[1], color:resColors[e[0]]||'#94A3B8' };
   });
 
-  const CRITICAL_JOBS = jobs.filter(function(j){ return j.status!=='Cancelled'; })
+  const rankedJobs = jobs.filter(function(j){ return j.status!=='Cancelled'; })
     .sort(function(a,b){ return (b.priority-a.priority) || (b.cost-a.cost); })
-    .slice(0,10).map(function(j){
+    .map(function(j){
       const remaining = j.finish ? daysBetween(now, j.finish) : 0;
       return {
         kks: j.kks || '-', wo: j.wo || ('JOB-'+(j.no||'—')), desc: j.desc, owner: j.owner,
@@ -1118,6 +1156,8 @@ function buildShutdownModel(rows){
         priority: j.priority===3?'Critical': j.priority===2?'High':'Medium'
       };
     });
+  const CRITICAL_JOBS = rankedJobs.slice(0,10);
+  const CRITICAL_JOBS_FULL = rankedJobs.slice(0,60);
 
   const ganttGroups = {};
   datedJobs.forEach(function(j){
@@ -1128,10 +1168,12 @@ function buildShutdownModel(rows){
     g.jobs.push(j);
     if(j.priority===3) g.critical=true;
   });
-  const GANTT_ITEMS = Object.values(ganttGroups).sort(function(a,b){ return b.jobs.length-a.jobs.length; }).slice(0,6).map(function(g){
+  const ganttAll = Object.values(ganttGroups).sort(function(a,b){ return b.jobs.length-a.jobs.length; }).map(function(g){
     const avgProgress = Math.round(g.jobs.reduce(function(s,j){ return s+j.progress; },0)/g.jobs.length);
     return { name:g.name+' ('+g.jobs.length+' jobs)', start:g.start.toISOString().slice(0,10), end:g.end.toISOString().slice(0,10), critical:g.critical, progress:avgProgress };
   });
+  const GANTT_ITEMS = ganttAll.slice(0,6);
+  const GANTT_ITEMS_FULL = ganttAll;
 
   const BUDGET = { material:budgetMaterial, labor:budgetLabor, ot:budgetOT, total:budgetTotal, spent:budgetSpent };
   const BUDGET_ITEMS = [
@@ -1140,19 +1182,20 @@ function buildShutdownModel(rows){
     {name:"OT", value:BUDGET.ot, color:"#F59E0B"},
   ];
 
-  const ALERTS = [];
-  jobs.filter(function(j){ return j.priority===3 && j.status!=='Cancelled'; }).slice(0,4).forEach(function(j){
-    ALERTS.push({type:'critical', title:j.desc, detail:'งานลำดับความสำคัญสูง (Non-routine ES) — '+j.dept, kks:j.kks||'-'});
+  const ALERTS_FULL = [];
+  jobs.filter(function(j){ return j.priority===3 && j.status!=='Cancelled'; }).slice(0,30).forEach(function(j){
+    ALERTS_FULL.push({type:'critical', title:j.desc, detail:'งานลำดับความสำคัญสูง (Non-routine ES) — '+j.dept, kks:j.kks||'-'});
   });
-  jobs.filter(function(j){ return j.status!=='Cancelled' && !j.decisionRaw; }).slice(0,4).forEach(function(j){
-    ALERTS.push({type:'missing', title:j.desc, detail:'ยังไม่ได้กำหนดผู้รับผิดชอบ (NIS / Outsource / Area)', kks:j.kks||'-'});
+  jobs.filter(function(j){ return j.status!=='Cancelled' && !j.decisionRaw; }).slice(0,30).forEach(function(j){
+    ALERTS_FULL.push({type:'missing', title:j.desc, detail:'ยังไม่ได้กำหนดผู้รับผิดชอบ (NIS / Outsource / Area)', kks:j.kks||'-'});
   });
-  jobs.filter(function(j){ return j.start && j.status==='Not Started' && daysBetween(now,j.start)>=0 && daysBetween(now,j.start)<=7; }).slice(0,4).forEach(function(j){
-    ALERTS.push({type:'near', title:j.desc, detail:'กำหนดเริ่มงานในอีก '+daysBetween(now,j.start)+' วัน', kks:j.kks||'-'});
+  jobs.filter(function(j){ return j.start && j.status==='Not Started' && daysBetween(now,j.start)>=0 && daysBetween(now,j.start)<=7; }).slice(0,30).forEach(function(j){
+    ALERTS_FULL.push({type:'near', title:j.desc, detail:'กำหนดเริ่มงานในอีก '+daysBetween(now,j.start)+' วัน', kks:j.kks||'-'});
   });
-  jobs.filter(function(j){ return j.status==='In Progress' && !j.decisionRaw; }).slice(0,3).forEach(function(j){
-    ALERTS.push({type:'overdue', title:j.desc, detail:'อยู่ในช่วงดำเนินงานแต่ยังไม่ระบุผู้รับผิดชอบ', kks:j.kks||'-'});
+  jobs.filter(function(j){ return j.status==='In Progress' && !j.decisionRaw; }).slice(0,20).forEach(function(j){
+    ALERTS_FULL.push({type:'overdue', title:j.desc, detail:'อยู่ในช่วงดำเนินงานแต่ยังไม่ระบุผู้รับผิดชอบ', kks:j.kks||'-'});
   });
+  const ALERTS = ALERTS_FULL.slice(0,7);
 
   const topCost = jobs.slice().sort(function(a,b){ return b.cost-a.cost; })[0];
   const soonest = jobs.filter(function(j){ return j.start && j.status==='Not Started'; }).sort(function(a,b){ return a.start-b.start; })[0];
@@ -1177,7 +1220,7 @@ function buildShutdownModel(rows){
     {label:"Remaining Days", value:KPIS.remainingDays, suffix:" Days", icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14v3"/><path d="m10.5 15.5 1.5 1.5 1.5-1.5"/>', trend:"Until shutdown end", tone:"warning", pct: totalDays? KPIS.remainingDays/totalDays*100:0},
   ];
 
-  return { PROJECT, KPIS, WORK_STATUS, DAILY_PROGRESS, ALERTS, WORK_CATEGORY, RESOURCE_PIE, CRITICAL_JOBS, GANTT_ITEMS, BUDGET, BUDGET_ITEMS, ACTIVITIES, KPI_DEFS, minStart, maxFinish, totalDays, jobs };
+  return { PROJECT, KPIS, WORK_STATUS, DAILY_PROGRESS, ALERTS, ALERTS_FULL, WORK_CATEGORY, WORK_CATEGORY_FULL, RESOURCE_PIE, CRITICAL_JOBS, CRITICAL_JOBS_FULL, GANTT_ITEMS, GANTT_ITEMS_FULL, BUDGET, BUDGET_ITEMS, ACTIVITIES, KPI_DEFS, minStart, maxFinish, totalDays, jobs };
 }
 
 /* ---- renderer ---- */
@@ -1424,6 +1467,98 @@ function renderShutdownDashboard(model){
 
   /* WORK LIST — all jobs, with editable Plan/Add tag (saved locally per sheet) */
   renderWorkList(model.jobs || []);
+
+  /* VIEW ALL — wire up detail modals for each section */
+  wireViewAllLinks(model);
+}
+
+/* ============ GENERIC DETAIL MODAL (View All popups) ============ */
+function openDetailModal(title, subtitle, bodyHtml){
+  document.getElementById('detailModalTitle').textContent = title;
+  document.getElementById('detailModalSubtitle').textContent = subtitle || '';
+  document.getElementById('detailModalBody').innerHTML = bodyHtml;
+  document.getElementById('detailModalBackdrop').style.display = 'flex';
+}
+function closeDetailModal(){
+  document.getElementById('detailModalBackdrop').style.display = 'none';
+}
+document.getElementById('detailModalCloseBtn').addEventListener('click', closeDetailModal);
+document.getElementById('detailModalBackdrop').addEventListener('click', function(e){ if(e.target.id==='detailModalBackdrop') closeDetailModal(); });
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){
+    closeDetailModal();
+    const pm = document.getElementById('pinModalBackdrop'); if(pm && pm.style.display!=='none') pm.style.display='none';
+  }
+});
+
+function wireViewAllLinks(model){
+  const alertsBtn = document.getElementById('viewAllAlerts');
+  if(alertsBtn) alertsBtn.onclick = function(){
+    const list = model.ALERTS_FULL && model.ALERTS_FULL.length ? model.ALERTS_FULL : model.ALERTS;
+    const rows = list.map(function(a){
+      const c = ALERT_CFG[a.type];
+      return '<div class="dm-row"><div class="alert-icon" style="background:'+c.bg+';color:'+c.color+';flex-shrink:0;">'+icon(c.icon,'width="14" height="14"')+'</div>'+
+        '<div style="min-width:0;flex:1;"><p style="margin:0;font-size:12.5px;font-weight:700;">'+escapeHtml(a.title)+'</p>'+
+        '<p style="margin:2px 0 0;font-size:11.5px;color:var(--text-faint);">'+escapeHtml(a.detail)+'</p></div>'+
+        '<span class="badge badge-outline" style="flex-shrink:0;">'+escapeHtml(a.kks)+'</span></div>';
+    }).join('');
+    openDetailModal('Alert Center — All Alerts', list.length+' alerts across all categories', rows || '<p class="empty-note">ไม่มีรายการแจ้งเตือน</p>');
+  };
+
+  const categoryBtn = document.getElementById('viewAllCategory');
+  if(categoryBtn) categoryBtn.onclick = function(){
+    const list = model.WORK_CATEGORY_FULL || model.WORK_CATEGORY;
+    const maxV = Math.max(1, Math.max.apply(null, list.map(function(c){ return c.jobs; })));
+    const rows = list.map(function(c){
+      return '<div class="dm-row"><div class="bar-icon" style="background:'+c.color+';flex-shrink:0;">'+icon('<circle cx="12" cy="12" r="4"/>','width="11" height="11"')+'</div>'+
+        '<div style="width:140px;flex-shrink:0;font-size:12.5px;font-weight:600;">'+escapeHtml(c.category)+'</div>'+
+        '<div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:'+(c.jobs/maxV*100)+'%;background:'+c.color+';"></div></div>'+
+        '<div style="width:34px;text-align:right;font-weight:800;font-size:12.5px;">'+c.jobs+'</div></div>';
+    }).join('');
+    openDetailModal('Work Category — Full Breakdown', list.length+' departments', rows);
+  };
+
+  const criticalBtn = document.getElementById('viewAllCritical');
+  if(criticalBtn) criticalBtn.onclick = function(){
+    const list = model.CRITICAL_JOBS_FULL || model.CRITICAL_JOBS;
+    const statusBadge = {"Completed":"success","In Progress":"secondary","Cancelled":"slate","Not Started":"slate"};
+    const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
+    const rows = '<table class="dm-list-table"><thead><tr><th>KKS</th><th>Description</th><th>Owner</th><th>Status</th><th>Priority</th></tr></thead><tbody>'+
+      list.map(function(j){
+        return '<tr><td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.kks)+'</td>'+
+          '<td>'+escapeHtml(j.desc)+'</td><td style="color:var(--text-muted)">'+escapeHtml(j.owner)+'</td>'+
+          '<td><span class="badge badge-'+(statusBadge[j.status]||'slate')+'">'+j.status+'</span></td>'+
+          '<td><span class="badge badge-'+priorityBadge[j.priority]+'">'+j.priority+'</span></td></tr>';
+      }).join('') + '</tbody></table>';
+    openDetailModal('Critical & High Priority Jobs', list.length+' jobs ranked by priority', rows);
+  };
+
+  const ganttBtn = document.getElementById('viewAllGantt');
+  if(ganttBtn) ganttBtn.onclick = function(){
+    const list = model.GANTT_ITEMS_FULL || model.GANTT_ITEMS;
+    const rows = list.map(function(it){
+      return '<div class="gantt-row"><div class="gantt-label" style="width:220px;">'+escapeHtml(it.name)+'</div>'+
+        '<div class="gantt-track"><div class="gantt-bar" style="left:0%;width:'+it.progress+'%;background:'+(it.critical?'linear-gradient(90deg,#F87171,#DC2626)':'linear-gradient(90deg,var(--grad-from),var(--grad-to))')+';">'+it.progress+'%</div></div></div>';
+    }).join('');
+    openDetailModal('Full Gantt — All Departments', list.length+' department groups · '+it_range(list), '<div class="gantt-wrap">'+rows+'</div>');
+  };
+  function it_range(list){
+    if(!list.length) return '';
+    return list[0].start+' → '+list[0].end;
+  }
+
+  const activitiesBtn = document.getElementById('viewAllActivities');
+  if(activitiesBtn) activitiesBtn.onclick = function(){
+    const list = model.ACTIVITIES;
+    const rows = list.map(function(a){
+      const c = ACT_CFG[a.type];
+      return '<div class="dm-row"><div class="activity-icon" style="background:'+c.bg+';color:'+c.color+';flex-shrink:0;">'+icon(c.icon,'width="14" height="14"')+'</div>'+
+        '<div style="min-width:0;flex:1;"><p style="margin:0;font-size:12.5px;font-weight:700;">'+escapeHtml(a.title)+'</p>'+
+        '<p style="margin:2px 0 0;font-size:11.5px;color:var(--text-faint);">'+escapeHtml(a.detail)+'</p></div>'+
+        '<span style="font-size:10.5px;color:var(--text-faint);flex-shrink:0;">'+escapeHtml(a.time)+'</span></div>';
+    }).join('');
+    openDetailModal('Recent Activities & Highlights', list.length+' items', rows);
+  };
 }
 
 /* ============ PLAN/ADD LOCAL TAGGING (per sheet, no backend) ============ */
