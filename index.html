@@ -441,10 +441,9 @@ html.dark .dm-bar-track-lg{background:rgba(255,255,255,.08);}
 
 .worklist-summary{display:flex;gap:8px;flex-wrap:wrap;}
 .wl-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;}
-.plan-add-select{width:100%;height:32px;border-radius:9px;border:1px solid var(--border);background:var(--card-solid);color:var(--text);font-size:11.5px;font-weight:700;padding:0 8px;outline:none;cursor:pointer;transition:.15s;}
-.plan-add-select:focus{box-shadow:0 0 0 3px rgba(30,58,138,.12);}
-.plan-add-select.tag-plan{color:#2563EB;border-color:rgba(37,99,235,.35);background:#EAF2FE;}
-.plan-add-select.tag-add{color:#D97706;border-color:rgba(217,119,6,.35);background:#FEF6E7;}
+.wl-badge-plan{background:#EAF2FE;color:#2563EB;}
+.wl-badge-add{background:#FEF6E7;color:#D97706;}
+.wl-badge-unset{background:#F1F5F9;color:#94A3B8;}
 </style>
 <body>
 
@@ -1130,7 +1129,7 @@ function parseSD2Date(s){
 /* column mapping for the second Shutdown-style Google Sheet (PP4 / ANSD template — EQ.No / Classify / Plan-Add based) */
 const SD2_COL = {
   NO:4, KKS:6, CLASSIFY:8, DEPT:10, DEPT_NIS:11, DESC:12, ACTIVITY:13, AREA:2,
-  ACCOUNT_NAME:24, RESPONSE_NAME:25, START:32, FINISH:33,
+  ACCOUNT_NAME:24, RESPONSE_NAME:25, START:32, FINISH:33, PLAN_ADD:5,
   TOTAL_COST:21, SPARE:21,
   dateParser: parseSD2Date,
   decisionOf: function(r){ return (r[28]||r[27]||'').trim(); },
@@ -1209,11 +1208,12 @@ function parseShutdownJobs(rows, COL){
 
     const monthKey = start ? (start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')) : null;
     const monthLabel = start ? start.toLocaleDateString('en-GB',{month:'long',year:'numeric'}) : null;
+    const planAddRaw = COL.PLAN_ADD!==undefined ? (r[COL.PLAN_ADD]||'').trim() : '';
 
     return {
       key: (no||'-')+'|'+(kks||'-')+'|'+desc.slice(0,40),
       no, area:(r[COL.AREA]||'').trim(), dept, classify,
-      kks, desc, owner, monthKey, monthLabel,
+      kks, desc, owner, monthKey, monthLabel, planAddRaw,
       wo: (r[COL.WO_AREA]||'').trim() || (r[COL.WO_NIS]||'').trim() || '',
       decisionRaw, resource, status, progress, start, finish, cost, labor, spare, ot, priority
     };
@@ -1860,22 +1860,6 @@ function wireViewAllLinks(model){
   };
 }
 
-/* ============ PLAN/ADD LOCAL TAGGING (per sheet, no backend) ============ */
-function planAddStorageKey(){
-  return 'sheetInsights.planAdd.' + (CURRENT_SHEET ? CURRENT_SHEET.id+'.'+CURRENT_SHEET.gid : 'unknown');
-}
-function getPlanAddMap(){
-  try{
-    const raw = localStorage.getItem(planAddStorageKey());
-    return raw ? (JSON.parse(raw)||{}) : {};
-  }catch(e){ return {}; }
-}
-function setPlanAddValue(jobKey, value){
-  const map = getPlanAddMap();
-  if(value){ map[jobKey] = value; } else { delete map[jobKey]; }
-  try{ localStorage.setItem(planAddStorageKey(), JSON.stringify(map)); }catch(e){}
-}
-
 function renderWorkList(jobs){
   const tbody = document.getElementById('worklistTableBody');
   const searchInput = document.getElementById('worklistSearch');
@@ -1902,15 +1886,14 @@ function renderWorkList(jobs){
   }
 
   function updateSummary(filteredList){
-    const map = getPlanAddMap();
     const source = filteredList || jobs;
     let planN=0, addN=0;
-    source.forEach(function(j){ const v=map[j.key]; if(v==='Plan') planN++; else if(v==='Add') addN++; });
+    source.forEach(function(j){ if(j.planAddRaw==='Plan') planN++; else if(j.planAddRaw==='Add') addN++; });
     const unsetN = source.length - planN - addN;
     summaryEl.innerHTML =
       '<span class="wl-badge" style="background:#EAF2FE;color:#2563EB;">Plan: '+planN+'</span>'+
       '<span class="wl-badge" style="background:#FEF6E7;color:#D97706;">Add: '+addN+'</span>'+
-      '<span class="wl-badge" style="background:#F1F5F9;color:#64748B;">ยังไม่ระบุ: '+unsetN+'</span>'+
+      '<span class="wl-badge" style="background:#F1F5F9;color:#64748B;">ไม่ระบุ: '+unsetN+'</span>'+
       '<span class="wl-badge" style="background:#F0FDF4;color:#059669;">แสดง: '+source.length+' / '+jobs.length+'</span>';
   }
 
@@ -1924,7 +1907,6 @@ function renderWorkList(jobs){
 
   function renderRows(){
     const f = currentFilters();
-    const map = getPlanAddMap();
     let list = jobs;
     if(f.dept){
       list = list.filter(function(j){ return j.dept===f.dept; });
@@ -1943,8 +1925,10 @@ function renderWorkList(jobs){
       return;
     }
     tbody.innerHTML = list.map(function(j){
-      const val = map[j.key] || '';
-      const tagClass = val==='Plan' ? 'tag-plan' : (val==='Add' ? 'tag-add' : '');
+      const val = j.planAddRaw || '';
+      const badgeHtml = val==='Plan' ? '<span class="wl-badge wl-badge-plan">Plan</span>'
+        : val==='Add' ? '<span class="wl-badge wl-badge-add">Add</span>'
+        : '<span class="wl-badge wl-badge-unset">ไม่ระบุ</span>';
       return '<tr>'+
         '<td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.no||'-')+'</td>'+
         '<td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.kks||'-')+'</td>'+
@@ -1952,23 +1936,9 @@ function renderWorkList(jobs){
         '<td style="color:var(--text-muted);white-space:nowrap;font-weight:500">'+escapeHtml(j.dept)+'</td>'+
         '<td><span class="badge badge-'+(statusBadge[j.status]||'slate')+'">'+j.status+'</span></td>'+
         '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
-        '<td><select class="plan-add-select '+tagClass+'" data-key="'+encodeURIComponent(j.key)+'">'+
-          '<option value=""'+(val===''?' selected':'')+'>— ยังไม่ระบุ —</option>'+
-          '<option value="Plan"'+(val==='Plan'?' selected':'')+'>Plan</option>'+
-          '<option value="Add"'+(val==='Add'?' selected':'')+'>Add</option>'+
-        '</select></td>'+
+        '<td>'+badgeHtml+'</td>'+
       '</tr>';
     }).join('');
-    tbody.querySelectorAll('.plan-add-select').forEach(function(sel){
-      sel.addEventListener('change', function(){
-        const key = decodeURIComponent(sel.dataset.key);
-        setPlanAddValue(key, sel.value);
-        sel.classList.remove('tag-plan','tag-add');
-        if(sel.value==='Plan') sel.classList.add('tag-plan');
-        else if(sel.value==='Add') sel.classList.add('tag-add');
-        updateSummary(list);
-      });
-    });
   }
 
   searchInput.value = '';
