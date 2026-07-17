@@ -1068,7 +1068,7 @@ const SHUTDOWN_TEMPLATE_HTML = `
               <select class="wl-filter-select" id="worklistResourceFilter"><option value="">ทุกประเภท (NIS/Outsource/Area)</option></select>
             </div>
             <table>
-              <thead><tr><th>No.</th><th>KKS</th><th>Description</th><th>Department</th><th>Status</th><th style="width:120px">Progress</th><th style="width:160px">Plan / Add</th></tr></thead>
+              <thead><tr><th style="width:100px">Plan/Add</th><th style="width:120px">WO</th><th>Work Type NIS</th><th>Description</th><th style="width:90px">%PG</th><th>Remark</th></tr></thead>
               <tbody id="worklistTableBody"></tbody>
             </table>
           </div>
@@ -1131,12 +1131,23 @@ function parseSD2Date(s){
   return new Date(year, mon, day, hour, min, 0);
 }
 /* column mapping for the second Shutdown-style Google Sheet (PP4 / ANSD template — EQ.No / Classify / Plan-Add based) */
+/* column mapping re-verified against a full live fetch of the PP4/ANSD sheet on 2026-07-18 —
+   the client restructured this sheet (inserted "วันที่ลง SD" at the front, removed the old
+   Department columns in favor of "work Type NIS" / "Sub work type NIS", and removed the
+   per-job Start/Finish Date columns entirely). Every index below is confirmed against real
+   header text + real row values fetched directly from the live sheet. */
 const SD2_COL = {
-  NO:4, KKS:6, CLASSIFY:8, DEPT:10, DEPT_NIS:11, DESC:12, ACTIVITY:13, AREA:2,
-  ACCOUNT_NAME:24, RESPONSE_NAME:25, START:32, FINISH:33, PLAN_ADD:5,
-  TOTAL_COST:21, SPARE:21,
+  NO:5, KKS:7, CLASSIFY:9, DEPT:11, DEPT_NIS:12, DESC:13, ACTIVITY:14, AREA:3,
+  ACCOUNT_NAME:25, RESPONSE_NAME:26, PLAN_ADD:6,
+  WO_AREA:27, WO_NIS:10,
+  TOTAL_COST:22, SPARE:18, TOTAL_LABOR:21, COST_OT:33,
+  WORK_TYPE_NIS:11, REMARK:35,
+  /* NOTE: this sheet no longer carries per-job Start/Finish Date columns at all (the client
+     replaced them with one shared text label like "7-25 May") — START/FINISH are intentionally
+     left unset so buildShutdownModel's hasSchedule flag shows an honest "no schedule data"
+     empty state instead of fabricating a fake date range. */
   dateParser: parseSD2Date,
-  decisionOf: function(r){ return (r[28]||r[27]||'').trim(); },
+  decisionOf: function(r){ return (r[31]||r[29]||'').trim(); },
   priorityOf: function(classify){
     if(classify==='งานซ่อมไม่ประจำ' || classify==='ใช้งบวันดับไฟ') return 3;
     if(classify==='Backlog' || classify==='Reliability') return 2;
@@ -1213,11 +1224,13 @@ function parseShutdownJobs(rows, COL){
     const monthKey = start ? (start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')) : null;
     const monthLabel = start ? start.toLocaleDateString('en-GB',{month:'long',year:'numeric'}) : null;
     const planAddRaw = COL.PLAN_ADD!==undefined ? (r[COL.PLAN_ADD]||'').trim() : '';
+    const workTypeNis = COL.WORK_TYPE_NIS!==undefined ? (r[COL.WORK_TYPE_NIS]||'').trim() : '';
+    const remark = COL.REMARK!==undefined ? (r[COL.REMARK]||'').trim() : '';
 
     return {
       key: (no||'-')+'|'+(kks||'-')+'|'+desc.slice(0,40),
       no, area:(r[COL.AREA]||'').trim(), dept, classify,
-      kks, desc, owner, monthKey, monthLabel, planAddRaw,
+      kks, desc, owner, monthKey, monthLabel, planAddRaw, workTypeNis, remark,
       wo: (r[COL.WO_AREA]||'').trim() || (r[COL.WO_NIS]||'').trim() || '',
       decisionRaw, resource, status, progress, start, finish, cost, labor, spare, ot, priority
     };
@@ -1942,12 +1955,12 @@ function renderWorkList(jobs){
     }
     if(f.text){
       list = list.filter(function(j){
-        return (j.no+' '+j.kks+' '+j.desc+' '+j.dept).toLowerCase().indexOf(f.text)>=0;
+        return (j.no+' '+j.kks+' '+j.desc+' '+j.dept+' '+j.wo+' '+j.workTypeNis+' '+j.remark).toLowerCase().indexOf(f.text)>=0;
       });
     }
     updateSummary(list);
     if(!list.length){
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-note">ไม่พบข้อมูลที่ตรงกับคำค้นหา</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-note">ไม่พบข้อมูลที่ตรงกับคำค้นหา</td></tr>';
       return;
     }
     tbody.innerHTML = list.map(function(j){
@@ -1956,13 +1969,12 @@ function renderWorkList(jobs){
         : val==='Add' ? '<span class="wl-badge wl-badge-add">Add</span>'
         : '<span class="wl-badge wl-badge-unset">ไม่ระบุ</span>';
       return '<tr>'+
-        '<td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.no||'-')+'</td>'+
-        '<td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.kks||'-')+'</td>'+
-        '<td class="job-desc" title="'+escapeHtml(j.desc)+'">'+escapeHtml(j.desc)+'</td>'+
-        '<td style="color:var(--text-muted);white-space:nowrap;font-weight:500">'+escapeHtml(j.dept)+'</td>'+
-        '<td><span class="badge badge-'+(statusBadge[j.status]||'slate')+'">'+j.status+'</span></td>'+
-        '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
         '<td>'+badgeHtml+'</td>'+
+        '<td class="mono" style="color:var(--primary);font-weight:700">'+escapeHtml(j.wo||'-')+'</td>'+
+        '<td style="color:var(--text-muted);white-space:nowrap;font-weight:500">'+escapeHtml(j.workTypeNis||'-')+'</td>'+
+        '<td class="job-desc" title="'+escapeHtml(j.desc)+'">'+escapeHtml(j.desc)+'</td>'+
+        '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
+        '<td style="color:var(--text-faint);font-size:12px;">'+escapeHtml(j.remark||'-')+'</td>'+
       '</tr>';
     }).join('');
   }
