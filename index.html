@@ -448,12 +448,14 @@ html.dark .dm-bar-track-lg{background:rgba(255,255,255,.08);}
    don't get squeezed or bloated unpredictably by the browser's auto table layout.
    Description/Remark stay single-line + ellipsis (full text on hover via title=) rather than
    multi-line clamping, which was reserving tall empty space on short rows for no reason. */
-.worklist-table{table-layout:fixed;}
-.worklist-table th, .worklist-table td{overflow-wrap:break-word;}
+.worklist-table{table-layout:fixed;width:100%;min-width:0;}
+.worklist-table th, .worklist-table td{overflow-wrap:break-word;overflow:hidden;}
 .worklist-table td{vertical-align:middle;}
+.worklist-table th:first-child, .worklist-table td:first-child{overflow:visible;}
 .worklist-table .job-desc{max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .worklist-table td.wl-remark{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   color:var(--text-faint);font-size:11.5px;}
+.worklist-table td.mono{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 </style>
 <body>
 
@@ -1078,7 +1080,10 @@ const SHUTDOWN_TEMPLATE_HTML = `
               <select class="wl-filter-select" id="worklistResourceFilter"><option value="">ทุกประเภท (NIS/Outsource/Area)</option></select>
             </div>
             <table class="worklist-table">
-              <thead><tr><th style="width:8%">Plan/Add</th><th style="width:10%">WO</th><th style="width:12%">Work Type NIS</th><th style="width:42%">Description</th><th style="width:8%">%PG</th><th style="width:20%">Remark</th></tr></thead>
+              <colgroup>
+                <col style="width:8%"><col style="width:10%"><col style="width:12%"><col style="width:42%"><col style="width:8%"><col style="width:20%">
+              </colgroup>
+              <thead><tr><th>Plan/Add</th><th>WO</th><th>Work Type NIS</th><th>Description</th><th>%PG</th><th>Remark</th></tr></thead>
               <tbody id="worklistTableBody"></tbody>
             </table>
           </div>
@@ -2544,7 +2549,7 @@ function loadPinned(id, gid){
   performLoad(id, gid).then(function(){
     showDashboard();
   }).catch(function(err){
-    console.error(err); 
+    console.error(err);
     showLanding();
     showLandingError(err && err.message ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
   });
