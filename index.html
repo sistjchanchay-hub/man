@@ -338,6 +338,26 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 .schema-chip .sc-type{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px;display:inline-block;}
 .table-search{width:100%;height:38px;border-radius:11px;border:1px solid var(--border);background:var(--card-solid);padding:0 14px;font-size:12.5px;color:var(--text);outline:none;margin-bottom:12px;}
 .empty-note{color:var(--text-faint);font-size:12px;padding:18px;text-align:center;}
+
+.modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(10,15,28,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-card{width:100%;max-width:420px;padding:28px;}
+.modal-title{margin:0 0 6px;font-size:17px;font-weight:800;letter-spacing:-.01em;}
+.modal-desc{margin:0 0 16px;font-size:12.5px;color:var(--text-muted);line-height:1.5;}
+.modal-input{width:100%;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card-solid);padding:0 14px;font-size:13.5px;color:var(--text);outline:none;transition:.2s;box-sizing:border-box;}
+.modal-input:focus{box-shadow:0 0 0 4px rgba(30,58,138,.12);border-color:rgba(30,58,138,.3);}
+.modal-actions{display:flex;align-items:center;gap:8px;margin-top:18px;}
+.modal-btn-primary{height:40px;padding:0 18px;border-radius:11px;border:none;cursor:pointer;color:#fff;font-weight:700;font-size:12.5px;
+  background:linear-gradient(120deg,#6366F1,#A855F7,#EC4899);background-size:200% auto;box-shadow:0 10px 22px -8px rgba(168,85,247,.5);transition:.2s;}
+.modal-btn-primary:hover{background-position:100% center;}
+.modal-btn-secondary{height:40px;padding:0 16px;border-radius:11px;border:1px solid var(--border);cursor:pointer;color:var(--text-muted);font-weight:700;font-size:12.5px;background:var(--card-solid);transition:.2s;}
+.modal-btn-secondary:hover{color:var(--danger);border-color:rgba(225,29,72,.3);}
+
+.sb-item.pin-item{position:relative;}
+.pin-remove{margin-left:auto;flex-shrink:0;opacity:0;color:rgba(255,255,255,.45);padding:3px;border-radius:6px;transition:.15s;}
+.sb-item.pin-item:hover .pin-remove{opacity:1;}
+.pin-remove:hover{color:#fff;background:rgba(255,255,255,.12);}
+.sidebar.collapsed .pin-remove{display:none;}
+.sb-nav-divider{height:1px;background:rgba(255,255,255,.08);margin:8px 12px;}
 </style>
 <body>
 
@@ -381,6 +401,9 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
           <input class="tb-search-input" id="tbSearchInput" placeholder="Search this dashboard's data...">
         </div>
         <div class="tb-actions">
+          <button class="icon-btn" title="Pin this dashboard" id="pinBtn" style="display:none;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 1 1 0 0 0 0-2H8a1 1 0 0 0 0 2 1 1 0 0 1 1 1z"/></svg>
+          </button>
           <button class="icon-btn" title="New Sheet" id="newSheetBtnTop" style="display:none;">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           </button>
@@ -425,11 +448,24 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
     </main>
   </div>
 </div>
+
+<div class="modal-backdrop" id="pinModalBackdrop" style="display:none;">
+  <div class="card modal-card">
+    <h3 class="modal-title">ปักหมุดแดชบอร์ดนี้</h3>
+    <p class="modal-desc">ตั้งชื่อเพื่อให้เรียกดูแดชบอร์ดนี้ได้เร็วๆ จากเมนูด้านซ้าย</p>
+    <input type="text" id="pinNameInput" class="modal-input" placeholder="เช่น Shutdown Maintenance Dashboard">
+    <div class="modal-actions">
+      <button class="modal-btn-secondary" id="pinUnpinBtn" style="display:none;">ลบหมุดนี้</button>
+      <div style="flex:1"></div>
+      <button class="modal-btn-secondary" id="pinCancelBtn">ยกเลิก</button>
+      <button class="modal-btn-primary" id="pinConfirmBtn">ปักหมุด</button>
+    </div>
+  </div>
+</div>
 <script>
 /* ============ NAV / STATIC CONFIG ============ */
-const NAV_ITEMS = [
-  {label:"Dashboard", active:true, icon:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'},
-  {label:"New Sheet", icon:'<path d="M12 5v14M5 12h14"/>'},
+const DEFAULT_PINNED = [
+  {id:"1-Ggrb6DBK3Bhi7We58IomV034OKtBIMe7l_XyRlBeMk", gid:"1374892773", name:"Shutdown Maintenance Dashboard"}
 ];
 const TONE = {
   primary:{bg:"#EEF0FE", fg:"#4F46E5", grad:"linear-gradient(135deg,#818CF8,#4F46E5)"},
@@ -1544,16 +1580,98 @@ function renderRecent(){
   });
 }
 
-/* ============ BOOT / LANDING FLOW ============ */
-document.getElementById('sbNav').innerHTML = NAV_ITEMS.map(function(n,i){
-  return '<button class="sb-item'+(n.active?' active':'')+'" data-nav="'+i+'">'+icon(n.icon)+'<span>'+n.label+'</span></button>';
-}).join('');
-document.querySelectorAll('#sbNav .sb-item').forEach(function(btn,i){
-  btn.addEventListener('click', function(){
-    if(NAV_ITEMS[i].label==='New Sheet') showLanding();
-  });
-});
+/* ============ PINNED DASHBOARDS (sidebar) ============ */
+const PINNED_KEY = 'sheetInsights.pinned';
+let CURRENT_SHEET = null; /* { id, gid, defaultName } for the currently loaded dashboard */
 
+function getPinned(){
+  try{
+    const raw = localStorage.getItem(PINNED_KEY);
+    if(raw===null){
+      localStorage.setItem(PINNED_KEY, JSON.stringify(DEFAULT_PINNED));
+      return DEFAULT_PINNED.slice();
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){ return DEFAULT_PINNED.slice(); }
+}
+function savePinnedList(list){
+  try{ localStorage.setItem(PINNED_KEY, JSON.stringify(list)); }catch(e){}
+}
+function findPinned(id,gid){
+  return getPinned().find(function(p){ return p.id===id && p.gid===gid; }) || null;
+}
+function pinSheet(id, gid, name){
+  let list = getPinned().filter(function(p){ return !(p.id===id && p.gid===gid); });
+  list.push({ id:id, gid:gid, name:(name||'Untitled Dashboard').trim() || 'Untitled Dashboard' });
+  savePinnedList(list);
+  renderSidebarNav();
+}
+function unpinSheet(id, gid){
+  const list = getPinned().filter(function(p){ return !(p.id===id && p.gid===gid); });
+  savePinnedList(list);
+  renderSidebarNav();
+}
+
+function renderSidebarNav(){
+  const pinned = getPinned();
+  const activeKey = CURRENT_SHEET ? CURRENT_SHEET.id+':'+CURRENT_SHEET.gid : null;
+  const pinIcon = '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 1 1 0 0 0 0-2H8a1 1 0 0 0 0 2 1 1 0 0 1 1 1z"/>';
+  const items = pinned.map(function(p){
+    const key = p.id+':'+p.gid;
+    const isActive = key===activeKey;
+    return '<button class="sb-item pin-item'+(isActive?' active':'')+'" data-id="'+p.id+'" data-gid="'+p.gid+'">'+
+      icon(pinIcon)+'<span title="'+escapeHtml(p.name)+'">'+escapeHtml(p.name)+'</span>'+
+      '<span class="pin-remove" data-unpin="1" data-id="'+p.id+'" data-gid="'+p.gid+'" title="ลบออกจากปักหมุด">'+icon('<path d="M18 6 6 18M6 6l12 12"/>','width="11" height="11"')+'</span>'+
+    '</button>';
+  }).join('');
+  const divider = pinned.length ? '<div class="sb-nav-divider"></div>' : '';
+  const newItem = '<button class="sb-item" id="sbNewSheetBtn">'+icon('<path d="M12 5v14M5 12h14"/>')+'<span>New Sheet</span></button>';
+  document.getElementById('sbNav').innerHTML = items + divider + newItem;
+
+  document.querySelectorAll('.pin-item').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      const delTarget = e.target.closest('[data-unpin]');
+      if(delTarget){
+        e.stopPropagation();
+        unpinSheet(delTarget.dataset.id, delTarget.dataset.gid);
+        return;
+      }
+      loadPinned(btn.dataset.id, btn.dataset.gid);
+    });
+  });
+  document.getElementById('sbNewSheetBtn').addEventListener('click', showLanding);
+}
+
+/* ============ PIN MODAL ============ */
+function openPinModal(){
+  if(!CURRENT_SHEET) return;
+  const existing = findPinned(CURRENT_SHEET.id, CURRENT_SHEET.gid);
+  document.getElementById('pinNameInput').value = existing ? existing.name : (CURRENT_SHEET.defaultName || '');
+  document.getElementById('pinUnpinBtn').style.display = existing ? '' : 'none';
+  document.getElementById('pinConfirmBtn').textContent = existing ? 'บันทึกชื่อ' : 'ปักหมุด';
+  document.getElementById('pinModalBackdrop').style.display = 'flex';
+  document.getElementById('pinNameInput').focus();
+}
+function closePinModal(){ document.getElementById('pinModalBackdrop').style.display = 'none'; }
+
+document.getElementById('pinBtn').addEventListener('click', openPinModal);
+document.getElementById('pinCancelBtn').addEventListener('click', closePinModal);
+document.getElementById('pinModalBackdrop').addEventListener('click', function(e){ if(e.target.id==='pinModalBackdrop') closePinModal(); });
+document.getElementById('pinConfirmBtn').addEventListener('click', function(){
+  if(!CURRENT_SHEET) return;
+  const name = document.getElementById('pinNameInput').value.trim();
+  pinSheet(CURRENT_SHEET.id, CURRENT_SHEET.gid, name || CURRENT_SHEET.defaultName);
+  closePinModal();
+});
+document.getElementById('pinUnpinBtn').addEventListener('click', function(){
+  if(!CURRENT_SHEET) return;
+  unpinSheet(CURRENT_SHEET.id, CURRENT_SHEET.gid);
+  closePinModal();
+});
+document.getElementById('pinNameInput').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('pinConfirmBtn').click(); });
+
+/* ============ BOOT / VIEW STATE ============ */
 document.getElementById('sbCollapseBtn').addEventListener('click', function(){
   document.getElementById('sidebar').classList.toggle('collapsed');
 });
@@ -1567,25 +1685,29 @@ darkRow.addEventListener('click', function(){
 document.getElementById('exportBtn').addEventListener('click', function(){ window.print(); });
 
 function showLanding(){
+  CURRENT_SHEET = null;
   document.getElementById('landingView').style.display='';
   document.getElementById('skeletonWrap').style.display='none';
   document.getElementById('mainContent').style.display='none';
   document.getElementById('exportBtn').style.display='none';
+  document.getElementById('pinBtn').style.display='none';
   document.getElementById('newSheetBtnTop').style.display='none';
   document.getElementById('tbSearchWrap').style.display='none';
   document.getElementById('tbTitle').textContent='Dashboard';
   document.getElementById('tbSubtitle').textContent='Paste a Google Sheet link to generate a live report';
   document.getElementById('landingError').style.display='none';
+  const w = document.getElementById('sbWidget'); if(w) w.innerHTML='';
   renderRecent();
+  renderSidebarNav();
 }
 function showDashboard(){
   document.getElementById('landingView').style.display='none';
   document.getElementById('exportBtn').style.display='';
+  document.getElementById('pinBtn').style.display='';
   document.getElementById('newSheetBtnTop').style.display='';
   document.getElementById('tbSearchWrap').style.display='none';
   document.getElementById('skeletonWrap').style.display='none';
   document.getElementById('mainContent').style.display='flex';
-  const w = document.getElementById('sbWidget'); if(w) w.innerHTML='';
 }
 function setLoading(isLoading){
   document.getElementById('landingLoading').style.display = isLoading ? 'flex' : 'none';
@@ -1597,6 +1719,44 @@ function showLandingError(msg){
   el.style.display = 'block';
 }
 
+/* Core fetch + detect + build + render. Resolves when rendered; does not touch landing/skeleton UI. */
+function performLoad(id, gid){
+  return fetchSheetCSV(id, gid).then(function(csvText){
+    const rawTable = parseCSV(csvText).filter(function(r){ return r.some(function(c){ return c && c.trim()!==''; }); });
+    if(!rawTable.length) throw new Error('ไม่พบข้อมูลในรูปแบบตาราง — ตรวจสอบว่า Sheet มีข้อมูลและหัวตาราง');
+
+    const sdHeaderIdx = detectShutdownHeaderIdx(rawTable);
+    const mainContentEl = document.getElementById('mainContent');
+    let label, name;
+
+    if(sdHeaderIdx >= 0){
+      const width = rawTable[sdHeaderIdx].length;
+      const dataRows = rawTable.slice(sdHeaderIdx+1).map(function(r){
+        const rr = r.slice(0,width); while(rr.length<width) rr.push(''); return rr;
+      });
+      if(!dataRows.length) throw new Error('พบโครงสร้าง Shutdown Work List แต่ไม่มีแถวข้อมูล');
+      mainContentEl.innerHTML = SHUTDOWN_TEMPLATE_HTML;
+      const model = buildShutdownModel(dataRows);
+      label = 'Shutdown Work List · '+model.KPIS.totalJobs+' jobs';
+      name = 'Shutdown Maintenance Dashboard';
+      CURRENT_SHEET = { id:id, gid:gid, defaultName:name };
+      saveRecent({ id:id, gid:gid, label:label });
+      renderShutdownDashboard(model);
+    } else {
+      const table = extractTable(csvText);
+      if(!table.header.length || !table.rows.length) throw new Error('ไม่พบข้อมูลในรูปแบบตาราง — ตรวจสอบว่า Sheet มีข้อมูลและหัวตาราง');
+      mainContentEl.innerHTML = GENERIC_TEMPLATE_HTML;
+      const model = buildGenericModel(table.header, table.rows);
+      label = (table.header[0]||'Sheet')+' · '+model.totalRows+' rows';
+      name = table.header[0] || 'Sheet Dashboard';
+      CURRENT_SHEET = { id:id, gid:gid, defaultName:name };
+      saveRecent({ id:id, gid:gid, label:label });
+      renderGenericDashboard(model);
+    }
+    renderSidebarNav();
+  });
+}
+
 function generate(){
   const raw = document.getElementById('sheetLinkInput').value;
   const parsed = parseSheetInput(raw);
@@ -1606,51 +1766,42 @@ function generate(){
     return;
   }
   setLoading(true);
-  fetchSheetCSV(parsed.id, parsed.gid).then(function(csvText){
-    const rawTable = parseCSV(csvText).filter(function(r){ return r.some(function(c){ return c && c.trim()!==''; }); });
-    if(!rawTable.length) throw new Error('ไม่พบข้อมูลในรูปแบบตาราง — ตรวจสอบว่า Sheet มีข้อมูลและหัวตาราง');
-
-    const sdHeaderIdx = detectShutdownHeaderIdx(rawTable);
-    const mainContentEl = document.getElementById('mainContent');
-    let label;
-
-    if(sdHeaderIdx >= 0){
-      /* Matches the Shutdown Work List signature — use the specialized template */
-      const width = rawTable[sdHeaderIdx].length;
-      const dataRows = rawTable.slice(sdHeaderIdx+1).map(function(r){
-        const rr = r.slice(0,width); while(rr.length<width) rr.push(''); return rr;
-      });
-      if(!dataRows.length) throw new Error('พบโครงสร้าง Shutdown Work List แต่ไม่มีแถวข้อมูล');
-      mainContentEl.innerHTML = SHUTDOWN_TEMPLATE_HTML;
-      const model = buildShutdownModel(dataRows);
-      setLoading(false);
-      label = 'Shutdown Work List · '+model.KPIS.totalJobs+' jobs';
-      saveRecent({ id:parsed.id, gid:parsed.gid, label:label });
-      showDashboard();
-      renderShutdownDashboard(model);
-    } else {
-      /* Generic sheet — use the auto-detected schema template */
-      const table = extractTable(csvText);
-      if(!table.header.length || !table.rows.length) throw new Error('ไม่พบข้อมูลในรูปแบบตาราง — ตรวจสอบว่า Sheet มีข้อมูลและหัวตาราง');
-      mainContentEl.innerHTML = GENERIC_TEMPLATE_HTML;
-      const model = buildGenericModel(table.header, table.rows);
-      setLoading(false);
-      label = (table.header[0]||'Sheet')+' · '+model.totalRows+' rows';
-      saveRecent({ id:parsed.id, gid:parsed.gid, label:label });
-      showDashboard();
-      renderGenericDashboard(model);
-    }
+  performLoad(parsed.id, parsed.gid).then(function(){
+    setLoading(false);
+    showDashboard();
   }).catch(function(err){
     console.error(err);
     setLoading(false);
     showLandingError(err && err.message ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
   });
 }
+function loadPinned(id, gid){
+  document.getElementById('landingView').style.display='none';
+  document.getElementById('mainContent').style.display='none';
+  document.getElementById('skeletonWrap').style.display='flex';
+  performLoad(id, gid).then(function(){
+    showDashboard();
+  }).catch(function(err){
+    console.error(err);
+    showLanding();
+    showLandingError(err && err.message ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
+  });
+}
+
 document.getElementById('generateBtn').addEventListener('click', generate);
 document.getElementById('sheetLinkInput').addEventListener('keydown', function(e){ if(e.key==='Enter') generate(); });
 document.getElementById('newSheetBtnTop').addEventListener('click', showLanding);
 
-showLanding();
+/* ============ INITIAL BOOT ============ */
+renderSidebarNav();
+(function(){
+  const pinned = getPinned();
+  if(pinned.length){
+    loadPinned(pinned[0].id, pinned[0].gid);
+  } else {
+    showLanding();
+  }
+})();
 </script>
 </body>
 </html>
