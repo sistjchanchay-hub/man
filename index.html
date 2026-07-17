@@ -1794,7 +1794,7 @@ function loadPinned(id, gid){
   document.getElementById('mainContent').style.display='none';
   document.getElementById('skeletonWrap').style.display='flex';
   performLoad(id, gid).then(function(){
-    showDashboard();
+    showDashboard(); 
   }).catch(function(err){
     console.error(err);
     showLanding();
