@@ -523,7 +523,8 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 <script>
 /* ============ NAV / STATIC CONFIG ============ */
 const DEFAULT_PINNED = [
-  {id:"1-Ggrb6DBK3Bhi7We58IomV034OKtBIMe7l_XyRlBeMk", gid:"1374892773", name:"Shutdown Maintenance Dashboard"}
+  {id:"1-Ggrb6DBK3Bhi7We58IomV034OKtBIMe7l_XyRlBeMk", gid:"1374892773", name:"Shutdown Maintenance Dashboard"},
+  {id:"1S5GqVWVKQffjKNcdtpE0W1i9Tu-HtUG56j7bkNmZ12g", gid:"1858739946", name:"Shutdown Maintenance Dashboard - PP4"}
 ];
 const TONE = {
   primary:{bg:"#EEF0FE", fg:"#4F46E5", grad:"linear-gradient(135deg,#818CF8,#4F46E5)"},
@@ -1048,6 +1049,35 @@ function parseCSVDate(s){
   if(!isPM && hour===12) hour=0;
   return new Date(SHEET_YEAR, mon, parseInt(m[2],10), hour, parseInt(m[4],10), 0);
 }
+/* second Shutdown-style sheet variant uses "D/MM/YY (HH:MM น)" e.g. "8/05/26 (08:00 น)" */
+function parseSD2Date(s){
+  if(!s) return null;
+  s = String(s).trim();
+  if(!s) return null;
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*\((\d{1,2}):(\d{2})/.exec(s);
+  if(!m) return null;
+  const day = parseInt(m[1],10);
+  const mon = parseInt(m[2],10)-1;
+  let year = parseInt(m[3],10);
+  if(year<100) year += 2000;
+  const hour = parseInt(m[4],10);
+  const min = parseInt(m[5],10);
+  if(mon<0 || mon>11) return null;
+  return new Date(year, mon, day, hour, min, 0);
+}
+/* column mapping for the second Shutdown-style Google Sheet (PP4 / ANSD template — EQ.No / Classify / Plan-Add based) */
+const SD2_COL = {
+  NO:4, KKS:6, CLASSIFY:8, DEPT:10, DEPT_NIS:11, DESC:12, ACTIVITY:13, AREA:2,
+  ACCOUNT_NAME:24, RESPONSE_NAME:25, START:32, FINISH:33,
+  TOTAL_COST:21, SPARE:21,
+  dateParser: parseSD2Date,
+  decisionOf: function(r){ return (r[28]||r[27]||'').trim(); },
+  priorityOf: function(classify){
+    if(classify==='งานซ่อมไม่ประจำ' || classify==='ใช้งบวันดับไฟ') return 3;
+    if(classify==='Backlog' || classify==='Reliability') return 2;
+    return 1;
+  }
+};
 
 const ALERT_CFG = {
   critical:{label:"Critical", color:"var(--danger)", bg:"var(--danger-50)", icon:'<path d="M12 9v4"/><path d="M12 17h.01"/><path d="m21.7 16.3-8-15a2 2 0 0 0-3.4 0l-8 15A2 2 0 0 0 4 19h16a2 2 0 0 0 1.7-2.7Z"/>'},
@@ -1064,19 +1094,21 @@ const ACT_CFG = {
 };
 
 /* ---- model builder ---- */
-function parseShutdownJobs(rows){
+function parseShutdownJobs(rows, COL){
+  COL = COL || SD_COL;
   const now = new Date();
+  const dateParser = COL.dateParser || parseCSVDate;
 
   const jobs = rows.map(function(r){
-    const decisionRaw = (r[SD_COL.DECISION]||'').trim();
-    const dept = (r[SD_COL.DEPT]||'').trim() || (r[SD_COL.DEPT_NIS]||'').trim() || 'Other';
-    const classify = (r[SD_COL.CLASSIFY]||'').trim();
-    const start = parseCSVDate(r[SD_COL.START]);
-    const finish = parseCSVDate(r[SD_COL.FINISH]);
-    const cost = parseMoney(r[SD_COL.TOTAL_COST]);
-    const labor = parseMoney(r[SD_COL.TOTAL_LABOR]);
-    const spare = parseMoney(r[SD_COL.SPARE]);
-    const ot = parseMoney(r[SD_COL.COST_OT]);
+    const decisionRaw = COL.decisionOf ? COL.decisionOf(r) : (r[COL.DECISION]||'').trim();
+    const dept = (r[COL.DEPT]||'').trim() || (r[COL.DEPT_NIS]||'').trim() || 'Other';
+    const classify = (r[COL.CLASSIFY]||'').trim();
+    const start = dateParser(r[COL.START]);
+    const finish = dateParser(r[COL.FINISH]);
+    const cost = parseMoney(r[COL.TOTAL_COST]);
+    const labor = parseMoney(r[COL.TOTAL_LABOR]);
+    const spare = parseMoney(r[COL.SPARE]);
+    const ot = parseMoney(r[COL.COST_OT]);
     const isCancelled = /cancel|เลื่อนไปทำ/i.test(decisionRaw);
 
     let status;
@@ -1096,23 +1128,28 @@ function parseShutdownJobs(rows){
     if(isCancelled) resource='Cancelled';
     else if(/outsource/i.test(decisionRaw)) resource='Outsource';
     else if(/nis/i.test(decisionRaw)) resource='NIS';
-    else if(/area|em psd|es \(pqa\)/i.test(decisionRaw)) resource='Area';
+    else if(COL.areaRegex ? COL.areaRegex.test(decisionRaw) : /area|em psd|es \(pqa\)/i.test(decisionRaw)) resource='Area';
     else resource='Pending';
 
-    let priority = 1;
-    if(classify==='Non-routine (ES)') priority=3;
-    else if(classify==='Backlog' || classify==='งานไม่ประจำ (EM)') priority=2;
+    let priority;
+    if(COL.priorityOf){
+      priority = COL.priorityOf(classify);
+    } else {
+      priority = 1;
+      if(classify==='Non-routine (ES)') priority=3;
+      else if(classify==='Backlog' || classify==='งานไม่ประจำ (EM)') priority=2;
+    }
 
-    const owner = [ (r[SD_COL.ACCOUNT_NAME]||'').trim(), (r[SD_COL.RESPONSE_NAME]||'').trim() ].filter(Boolean).join(' / ') || dept;
-    const desc = (r[SD_COL.DESC]||'').trim() || '(No description)';
-    const no = (r[SD_COL.NO]||'').trim();
-    const kks = (r[SD_COL.KKS]||'').trim();
+    const owner = [ (r[COL.ACCOUNT_NAME]||'').trim(), (r[COL.RESPONSE_NAME]||'').trim() ].filter(Boolean).join(' / ') || dept;
+    const desc = (r[COL.DESC]||'').trim() || (COL.ACTIVITY!==undefined ? (r[COL.ACTIVITY]||'').trim() : '') || '(No description)';
+    const no = (r[COL.NO]||'').trim();
+    const kks = (r[COL.KKS]||'').trim();
 
     return {
       key: (no||'-')+'|'+(kks||'-')+'|'+desc.slice(0,40),
-      no, area:(r[SD_COL.AREA]||'').trim(), dept, classify,
+      no, area:(r[COL.AREA]||'').trim(), dept, classify,
       kks, desc, owner,
-      wo: (r[SD_COL.WO_AREA]||'').trim() || (r[SD_COL.WO_NIS]||'').trim() || '',
+      wo: (r[COL.WO_AREA]||'').trim() || (r[COL.WO_NIS]||'').trim() || '',
       decisionRaw, resource, status, progress, start, finish, cost, labor, spare, ot, priority
     };
   });
@@ -1269,8 +1306,10 @@ function renderShutdownDashboard(model){
         BUDGET_ITEMS=model.BUDGET_ITEMS, ACTIVITIES=model.ACTIVITIES, KPI_DEFS=model.KPI_DEFS,
         PROJECT=model.PROJECT;
 
-  document.getElementById('tbTitle').textContent = 'Shutdown Maintenance Dashboard';
-  document.getElementById('tbSubtitle').textContent = 'Y26QSD1PP9 · '+PROJECT.rangeLabel+' · auto-detected Shutdown Work List';
+  const sdTitle = (typeof CURRENT_SHEET !== 'undefined' && CURRENT_SHEET && CURRENT_SHEET.defaultName) ? CURRENT_SHEET.defaultName : 'Shutdown Maintenance Dashboard';
+  const sdArea = (model.jobs && model.jobs[0] && model.jobs[0].area) ? model.jobs[0].area+' · ' : '';
+  document.getElementById('tbTitle').textContent = sdTitle;
+  document.getElementById('tbSubtitle').textContent = sdArea+PROJECT.rangeLabel+' · auto-detected Shutdown Work List';
 
   /* Sidebar progress widget */
   (function(){
@@ -1779,6 +1818,20 @@ function detectShutdownHeaderIdx(rawTable){
   }
   return -1;
 }
+/* second Shutdown-style sheet variant (EQ.No / Plan-Add based template, e.g. PP4/ANSD sheet) */
+function detectShutdown2HeaderIdx(rawTable){
+  for(let i=0;i<Math.min(rawTable.length,25);i++){
+    const row = rawTable[i];
+    let hasEqNo=false, hasPlanAdd=false;
+    for(let j=0;j<row.length;j++){
+      const v=(row[j]||'').trim();
+      if(v==='EQ.No') hasEqNo=true;
+      if(v==='Plan/Add') hasPlanAdd=true;
+    }
+    if(hasEqNo && hasPlanAdd) return i;
+  }
+  return -1;
+}
 
 /* ============ RENDER ============ */
 let CURRENT_MODEL = null;
@@ -1973,10 +2026,20 @@ function getPinned(){
     /* sanitize: drop malformed entries, backfill missing names (guards against older/corrupted localStorage state) */
     let changed = false;
     let clean = parsed.filter(function(p){ return p && p.id && p.gid; }).map(function(p){
-      if(!p.name || !String(p.name).trim()){ changed = true; return { id:p.id, gid:p.gid, name: p.id===DEFAULT_PINNED[0].id ? DEFAULT_PINNED[0].name : 'Untitled Dashboard' }; }
+      if(!p.name || !String(p.name).trim()){
+        const known = DEFAULT_PINNED.find(function(dp){ return dp.id===p.id && dp.gid===p.gid; });
+        changed = true;
+        return { id:p.id, gid:p.gid, name: known ? known.name : 'Untitled Dashboard' };
+      }
       return p;
     });
     if(clean.length===0) clean = DEFAULT_PINNED.slice();
+    /* migration: make sure any newly-added default dashboards (e.g. a second pinned sheet shipped
+       in a later version of this tool) get appended for returning users who already have a saved list */
+    DEFAULT_PINNED.forEach(function(dp){
+      const exists = clean.some(function(p){ return p.id===dp.id && p.gid===dp.gid; });
+      if(!exists){ clean.push(dp); changed = true; }
+    });
     if(changed || clean.length!==parsed.length) savePinnedList(clean);
     return clean;
   }catch(e){ return DEFAULT_PINNED.slice(); }
@@ -2112,6 +2175,7 @@ function performLoad(id, gid){
     if(!rawTable.length) throw new Error('ไม่พบข้อมูลในรูปแบบตาราง — ตรวจสอบว่า Sheet มีข้อมูลและหัวตาราง');
 
     const sdHeaderIdx = detectShutdownHeaderIdx(rawTable);
+    const sd2HeaderIdx = sdHeaderIdx<0 ? detectShutdown2HeaderIdx(rawTable) : -1;
     const mainContentEl = document.getElementById('mainContent');
     let label, name;
 
@@ -2127,6 +2191,22 @@ function performLoad(id, gid){
       const model = buildShutdownModel(allJobs);
       label = 'Shutdown Work List · '+model.KPIS.totalJobs+' jobs';
       name = 'Shutdown Maintenance Dashboard';
+      CURRENT_SHEET = { id:id, gid:gid, defaultName:name };
+      saveRecent({ id:id, gid:gid, label:label });
+      renderShutdownDashboard(model);
+      wireGlobalFilterBar(allJobs);
+    } else if(sd2HeaderIdx >= 0){
+      const width = rawTable[sd2HeaderIdx].length;
+      const dataRows = rawTable.slice(sd2HeaderIdx+1).map(function(r){
+        const rr = r.slice(0,width); while(rr.length<width) rr.push(''); return rr;
+      });
+      if(!dataRows.length) throw new Error('พบโครงสร้าง Shutdown Work List แต่ไม่มีแถวข้อมูล');
+      mainContentEl.innerHTML = SHUTDOWN_TEMPLATE_HTML;
+      const allJobs = parseShutdownJobs(dataRows, SD2_COL);
+      CURRENT_ALL_JOBS = allJobs;
+      const model = buildShutdownModel(allJobs);
+      label = 'Shutdown Work List (PP4) · '+model.KPIS.totalJobs+' jobs';
+      name = 'Shutdown Maintenance Dashboard - PP4';
       CURRENT_SHEET = { id:id, gid:gid, defaultName:name };
       saveRecent({ id:id, gid:gid, label:label });
       renderShutdownDashboard(model);
