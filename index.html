@@ -1141,21 +1141,22 @@ function parseSD2Date(s){
   return new Date(year, mon, day, hour, min, 0);
 }
 /* column mapping for the second Shutdown-style Google Sheet (PP4 / ANSD template — EQ.No / Classify / Plan-Add based) */
-/* column mapping re-verified against a full live fetch of the PP4/ANSD sheet on 2026-07-18 —
-   the client restructured this sheet (inserted "วันที่ลง SD" at the front, removed the old
-   Department columns in favor of "work Type NIS" / "Sub work type NIS", and removed the
-   per-job Start/Finish Date columns entirely). Every index below is confirmed against real
-   header text + real row values fetched directly from the live sheet. */
+/* column mapping re-verified against a full wide-range live fetch (A1:BK30) of the PP4/ANSD sheet
+   on 2026-07-18. Correction to the previous mapping: an earlier narrow fetch (only 36 columns) missed
+   columns further right and wrongly concluded the sheet had no Start/Finish Date columns at all — the
+   wide fetch shows they DO exist ("***Start Date Plan" idx36 / "***Finish Date Plan" idx37, format
+   "8/05/26 (08:00 น)", parseable by parseSD2Date), plus a real per-row "%PG" progress column (idx61,
+   right after the daily 8/5..25/5 tracking columns) and a real "Status" text column (idx62, values like
+   Finished/Pending/In progress/Cancel) that should be used verbatim instead of re-derived from dates —
+   re-deriving status from now()-vs-finish would wrongly mark every job "Completed" once today's date is
+   past the whole May shutdown window, even for jobs the sheet itself marks Pending/Cancel. */
 const SD2_COL = {
   NO:5, KKS:7, CLASSIFY:9, DEPT:11, DEPT_NIS:12, DESC:13, ACTIVITY:14, AREA:3,
   ACCOUNT_NAME:25, RESPONSE_NAME:26, PLAN_ADD:6,
   WO_AREA:27, WO_NIS:10,
   TOTAL_COST:22, SPARE:18, TOTAL_LABOR:21, COST_OT:33,
   WORK_TYPE_NIS:11, REMARK:35,
-  /* NOTE: this sheet no longer carries per-job Start/Finish Date columns at all (the client
-     replaced them with one shared text label like "7-25 May") — START/FINISH are intentionally
-     left unset so buildShutdownModel's hasSchedule flag shows an honest "no schedule data"
-     empty state instead of fabricating a fake date range. */
+  START:36, FINISH:37, PROGRESS:61, STATUS:62,
   dateParser: parseSD2Date,
   decisionOf: function(r){ return (r[31]||r[29]||'').trim(); },
   priorityOf: function(classify){
@@ -1196,16 +1197,28 @@ function parseShutdownJobs(rows, COL){
     const spare = parseMoney(r[COL.SPARE]);
     const ot = parseMoney(r[COL.COST_OT]);
     const isCancelled = /cancel|เลื่อนไปทำ/i.test(decisionRaw);
+    const rawStatus = COL.STATUS!==undefined ? (r[COL.STATUS]||'').trim() : '';
 
     let status;
-    if(isCancelled) status='Cancelled';
+    if(rawStatus){
+      /* trust the sheet's own Status column when present — it reflects reality (Pending/Cancel/etc.)
+         even when today's date has passed the whole shutdown window, which date-only inference can't know */
+      if(/cancel/i.test(rawStatus)) status='Cancelled';
+      else if(/finish|complete|เสร็จ/i.test(rawStatus)) status='Completed';
+      else if(/progress|กำลัง/i.test(rawStatus)) status='In Progress';
+      else status='Not Started';
+    } else if(isCancelled) status='Cancelled';
     else if(!start || !finish) status='Not Started';
     else if(now < start) status='Not Started';
     else if(now > finish) status='Completed';
     else status='In Progress';
 
+    const rawProgress = COL.PROGRESS!==undefined ? (r[COL.PROGRESS]||'').trim() : '';
     let progress = 0;
-    if(status==='Completed') progress=100;
+    if(rawProgress){
+      const pgNum = parseFloat(rawProgress.replace('%',''));
+      if(!isNaN(pgNum)) progress = Math.round(Math.min(100,Math.max(0,pgNum)));
+    } else if(status==='Completed') progress=100;
     else if(status==='In Progress' && start && finish && finish>start){
       progress = Math.round(Math.min(100,Math.max(0,(now-start)/(finish-start)*100)));
     }
@@ -1241,7 +1254,7 @@ function parseShutdownJobs(rows, COL){
       key: (no||'-')+'|'+(kks||'-')+'|'+desc.slice(0,40),
       no, area:(r[COL.AREA]||'').trim(), dept, classify,
       kks, desc, owner, monthKey, monthLabel, planAddRaw, workTypeNis, remark,
-      wo: (r[COL.WO_AREA]||'').trim() || (r[COL.WO_NIS]||'').trim() || '',
+      wo: (r[COL.WO_NIS]||'').trim(),
       decisionRaw, resource, status, progress, start, finish, cost, labor, spare, ot, priority
     };
   });
