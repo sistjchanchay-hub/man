@@ -941,6 +941,9 @@ const SHUTDOWN_TEMPLATE_HTML = `
             </div>
             <select class="wl-filter-select" id="globalDeptFilter"><option value="">ทุกแผนก (Department)</option></select>
             <select class="wl-filter-select" id="globalResourceFilter"><option value="">ทุกประเภท (NIS/Outsource/Area)</option></select>
+            <select class="wl-filter-select" id="globalMonthFilter"><option value="">ทุกเดือน</option></select>
+            <select class="wl-filter-select" id="sdFilterCol1"><option value="">เลือกคอลัมน์เพิ่มเติม...</option></select>
+            <select class="wl-filter-select" id="sdFilterVal1" disabled><option value="">ทุกค่า</option></select>
             <span class="gf-summary" id="globalFilterSummary"></span>
             <button class="gf-reset" id="globalFilterReset" type="button">ล้างตัวกรอง</button>
           </div>
@@ -1204,10 +1207,13 @@ function parseShutdownJobs(rows, COL){
     const no = (r[COL.NO]||'').trim();
     const kks = (r[COL.KKS]||'').trim();
 
+    const monthKey = start ? (start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')) : null;
+    const monthLabel = start ? start.toLocaleDateString('en-GB',{month:'long',year:'numeric'}) : null;
+
     return {
       key: (no||'-')+'|'+(kks||'-')+'|'+desc.slice(0,40),
       no, area:(r[COL.AREA]||'').trim(), dept, classify,
-      kks, desc, owner,
+      kks, desc, owner, monthKey, monthLabel,
       wo: (r[COL.WO_AREA]||'').trim() || (r[COL.WO_NIS]||'').trim() || '',
       decisionRaw, resource, status, progress, start, finish, cost, labor, spare, ot, priority
     };
@@ -1614,9 +1620,12 @@ function renderShutdownDashboard(model){
 }
 
 /* ============ GLOBAL FILTER BAR (Department + Resource, filters the whole dashboard) ============ */
-function wireGlobalFilterBar(allJobs){
+function wireGlobalFilterBar(allJobs, rawHeader, rawRows, COL){
   const deptSel = document.getElementById('globalDeptFilter');
   const resSel = document.getElementById('globalResourceFilter');
+  const monthSel = document.getElementById('globalMonthFilter');
+  const col1Sel = document.getElementById('sdFilterCol1');
+  const val1Sel = document.getElementById('sdFilterVal1');
   const summaryEl = document.getElementById('globalFilterSummary');
   const resetBtn = document.getElementById('globalFilterReset');
   if(!deptSel || !resSel) return;
@@ -1633,16 +1642,69 @@ function wireGlobalFilterBar(allJobs){
   resSel.innerHTML = '<option value="">ทุกประเภท (NIS/Outsource/Area)</option>' +
     resources.map(function(r){ return '<option value="'+escapeHtml(r)+'">'+escapeHtml(resourceLabel[r]||r)+'</option>'; }).join('');
 
+  if(monthSel){
+    const monthMap = {};
+    allJobs.forEach(function(j){ if(j.monthKey) monthMap[j.monthKey]=j.monthLabel; });
+    const monthKeys = Object.keys(monthMap).sort();
+    if(monthKeys.length>=2){
+      monthSel.innerHTML = '<option value="">ทุกเดือน</option>' +
+        monthKeys.map(function(k){ return '<option value="'+k+'">'+escapeHtml(monthMap[k])+'</option>'; }).join('');
+    } else {
+      monthSel.style.display = 'none';
+    }
+  }
+
+  /* extra: pick-any-column filter over the ORIGINAL sheet columns (not just the derived Department/Resource fields) */
+  const hasRaw = !!(col1Sel && val1Sel && rawHeader && rawRows);
+  if(hasRaw){
+    const cols = inferColumns(rawHeader, rawRows);
+    const candidateCols = cols.filter(function(c){ return c.type==='category' && c.distinctCount>=2 && c.distinctCount<=50; });
+    if(candidateCols.length){
+      col1Sel.innerHTML = '<option value="">เลือกคอลัมน์เพิ่มเติม...</option>' +
+        candidateCols.map(function(c){ return '<option value="'+c.index+'">'+escapeHtml(c.name.replace(/\s+/g,' ').trim())+'</option>'; }).join('');
+    } else {
+      col1Sel.style.display = 'none';
+      val1Sel.style.display = 'none';
+    }
+  } else if(col1Sel && val1Sel){
+    col1Sel.style.display = 'none';
+    val1Sel.style.display = 'none';
+  }
+
+  function updateVal1Options(){
+    if(!col1Sel || !val1Sel) return;
+    const idx = col1Sel.value;
+    if(idx===''){ val1Sel.innerHTML = '<option value="">ทุกค่า</option>'; val1Sel.disabled = true; return; }
+    val1Sel.disabled = false;
+    const set = new Set();
+    rawRows.forEach(function(r){ const v=(r[+idx]||'').trim(); if(v) set.add(v); });
+    const vals = Array.from(set).sort();
+    val1Sel.innerHTML = '<option value="">ทุกค่า</option>' + vals.map(function(v){ return '<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>'; }).join('');
+  }
+
   function updateSummary(filteredCount){
     if(summaryEl) summaryEl.textContent = 'แสดง '+filteredCount+' / '+allJobs.length+' งาน';
   }
 
   function applyGlobalFilter(){
+    let filtered;
+    if(hasRaw){
+      let rows = rawRows;
+      if(col1Sel.value!=='' && val1Sel.value!==''){
+        rows = rows.filter(function(r){ return (r[+col1Sel.value]||'').trim()===val1Sel.value; });
+      }
+      filtered = parseShutdownJobs(rows, COL);
+    } else {
+      filtered = (CURRENT_ALL_JOBS || allJobs).slice();
+    }
+
     const dept = deptSel.value;
     const resource = resSel.value;
-    let filtered = CURRENT_ALL_JOBS || allJobs;
+    const month = monthSel ? monthSel.value : '';
     if(dept) filtered = filtered.filter(function(j){ return j.dept===dept; });
     if(resource) filtered = filtered.filter(function(j){ return j.resource===resource; });
+    if(month) filtered = filtered.filter(function(j){ return j.monthKey===month; });
+
     updateSummary(filtered.length);
     const newModel = buildShutdownModel(filtered);
     renderShutdownDashboard(newModel);
@@ -1651,10 +1713,17 @@ function wireGlobalFilterBar(allJobs){
   updateSummary(allJobs.length);
   deptSel.onchange = applyGlobalFilter;
   resSel.onchange = applyGlobalFilter;
+  if(monthSel) monthSel.onchange = applyGlobalFilter;
+  if(hasRaw){
+    col1Sel.onchange = function(){ updateVal1Options(); val1Sel.value=''; applyGlobalFilter(); };
+    val1Sel.onchange = applyGlobalFilter;
+  }
   if(resetBtn){
     resetBtn.onclick = function(){
       deptSel.value = '';
       resSel.value = '';
+      if(monthSel) monthSel.value = '';
+      if(hasRaw){ col1Sel.value=''; updateVal1Options(); }
       applyGlobalFilter();
     };
   }
@@ -2090,7 +2159,7 @@ function wireGenericFilterBar(header, allRows, cols){
 
   function colOptionsHtml(placeholder){
     return '<option value="">'+placeholder+'</option>' +
-      candidateCols.map(function(c){ return '<option value="'+c.index+'">'+escapeHtml(c.name)+'</option>'; }).join('');
+      candidateCols.map(function(c){ return '<option value="'+c.index+'">'+escapeHtml(c.name.replace(/\s+/g,' ').trim())+'</option>'; }).join('');
   }
   col1Sel.innerHTML = colOptionsHtml('เลือกคอลัมน์ที่ 1...');
   col2Sel.innerHTML = colOptionsHtml('เลือกคอลัมน์ที่ 2 (ซ้อน)...');
@@ -2384,7 +2453,7 @@ function performLoad(id, gid){
       CURRENT_SHEET = { id:id, gid:gid, defaultName:name };
       saveRecent({ id:id, gid:gid, label:label });
       renderShutdownDashboard(model);
-      wireGlobalFilterBar(allJobs);
+      wireGlobalFilterBar(allJobs, rawTable[sdHeaderIdx], dataRows, SD_COL);
     } else if(sd2HeaderIdx >= 0){
       const width = rawTable[sd2HeaderIdx].length;
       const dataRows = rawTable.slice(sd2HeaderIdx+1).map(function(r){
@@ -2400,7 +2469,7 @@ function performLoad(id, gid){
       CURRENT_SHEET = { id:id, gid:gid, defaultName:name };
       saveRecent({ id:id, gid:gid, label:label });
       renderShutdownDashboard(model);
-      wireGlobalFilterBar(allJobs);
+      wireGlobalFilterBar(allJobs, rawTable[sd2HeaderIdx], dataRows, SD2_COL);
     } else {
       const table = extractTable(csvText);
       if(!table.header.length || !table.rows.length) throw new Error('ไม่พบข้อมูลในรูปแบบตาราง — ตรวจสอบว่า Sheet มีข้อมูลและหัวตาราง');
