@@ -338,6 +338,11 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 .schema-chip .sc-type{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:999px;display:inline-block;}
 .table-search{width:100%;height:38px;border-radius:11px;border:1px solid var(--border);background:var(--card-solid);padding:0 14px;font-size:12.5px;color:var(--text);outline:none;margin-bottom:12px;}
 .empty-note{color:var(--text-faint);font-size:12px;padding:18px;text-align:center;}
+.worklist-filters{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.worklist-filters .table-search{flex:1 1 220px;min-width:180px;margin-bottom:0;}
+.wl-filter-select{height:38px;border-radius:11px;border:1px solid var(--border);background:var(--card-solid);padding:0 12px;font-size:12.5px;color:var(--text);outline:none;cursor:pointer;flex:0 0 auto;min-width:170px;transition:.15s;}
+.wl-filter-select:focus{box-shadow:0 0 0 3px rgba(30,58,138,.12);}
+@media (max-width:640px){.worklist-filters{flex-direction:column;}.wl-filter-select{width:100%;}}
 
 .modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(10,15,28,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;
   animation:modalBackdropIn .22s ease;}
@@ -971,7 +976,11 @@ const SHUTDOWN_TEMPLATE_HTML = `
             <div class="worklist-summary" id="worklistSummary"></div>
           </div>
           <div class="card-body table-wrap">
-            <input class="table-search" id="worklistSearch" placeholder="ค้นหา KKS, รายละเอียด, แผนก...">
+            <div class="worklist-filters">
+              <input class="table-search" id="worklistSearch" placeholder="ค้นหา KKS, รายละเอียด, แผนก...">
+              <select class="wl-filter-select" id="worklistDeptFilter"><option value="">ทุกแผนก (Department)</option></select>
+              <select class="wl-filter-select" id="worklistResourceFilter"><option value="">ทุกประเภท (NIS/Outsource/Area)</option></select>
+            </div>
             <table>
               <thead><tr><th>No.</th><th>KKS</th><th>Description</th><th>Department</th><th>Status</th><th style="width:120px">Progress</th><th style="width:160px">Plan / Add</th></tr></thead>
               <tbody id="worklistTableBody"></tbody>
@@ -1581,30 +1590,64 @@ function renderWorkList(jobs){
   const tbody = document.getElementById('worklistTableBody');
   const searchInput = document.getElementById('worklistSearch');
   const summaryEl = document.getElementById('worklistSummary');
+  const deptFilterEl = document.getElementById('worklistDeptFilter');
+  const resFilterEl = document.getElementById('worklistResourceFilter');
   if(!tbody || !searchInput) return;
 
   const statusBadge = {"Completed":"success","In Progress":"secondary","Cancelled":"slate","Not Started":"slate"};
+  const resourceLabel = {"NIS":"NIS (Internal)","Outsource":"Outsource","Area":"Area","Pending":"Pending","Cancelled":"Cancelled"};
 
-  function updateSummary(){
+  /* populate Department + Resource dropdown options from actual data */
+  if(deptFilterEl){
+    const depts = Array.from(new Set(jobs.map(function(j){ return j.dept; }).filter(Boolean))).sort();
+    deptFilterEl.innerHTML = '<option value="">ทุกแผนก (Department)</option>' +
+      depts.map(function(d){ return '<option value="'+escapeHtml(d)+'">'+escapeHtml(d)+'</option>'; }).join('');
+  }
+  if(resFilterEl){
+    const resources = Array.from(new Set(jobs.map(function(j){ return j.resource; }).filter(Boolean)));
+    const order = ['NIS','Outsource','Area','Pending','Cancelled'];
+    resources.sort(function(a,b){ return order.indexOf(a)-order.indexOf(b); });
+    resFilterEl.innerHTML = '<option value="">ทุกประเภท (NIS/Outsource/Area)</option>' +
+      resources.map(function(r){ return '<option value="'+escapeHtml(r)+'">'+escapeHtml(resourceLabel[r]||r)+'</option>'; }).join('');
+  }
+
+  function updateSummary(filteredList){
     const map = getPlanAddMap();
+    const source = filteredList || jobs;
     let planN=0, addN=0;
-    jobs.forEach(function(j){ const v=map[j.key]; if(v==='Plan') planN++; else if(v==='Add') addN++; });
-    const unsetN = jobs.length - planN - addN;
+    source.forEach(function(j){ const v=map[j.key]; if(v==='Plan') planN++; else if(v==='Add') addN++; });
+    const unsetN = source.length - planN - addN;
     summaryEl.innerHTML =
       '<span class="wl-badge" style="background:#EAF2FE;color:#2563EB;">Plan: '+planN+'</span>'+
       '<span class="wl-badge" style="background:#FEF6E7;color:#D97706;">Add: '+addN+'</span>'+
-      '<span class="wl-badge" style="background:#F1F5F9;color:#64748B;">ยังไม่ระบุ: '+unsetN+'</span>';
+      '<span class="wl-badge" style="background:#F1F5F9;color:#64748B;">ยังไม่ระบุ: '+unsetN+'</span>'+
+      '<span class="wl-badge" style="background:#F0FDF4;color:#059669;">แสดง: '+source.length+' / '+jobs.length+'</span>';
   }
 
-  function renderRows(filter){
-    filter = (filter||'').toLowerCase().trim();
+  function currentFilters(){
+    return {
+      text: (searchInput.value||'').toLowerCase().trim(),
+      dept: deptFilterEl ? deptFilterEl.value : '',
+      resource: resFilterEl ? resFilterEl.value : ''
+    };
+  }
+
+  function renderRows(){
+    const f = currentFilters();
     const map = getPlanAddMap();
     let list = jobs;
-    if(filter){
-      list = jobs.filter(function(j){
-        return (j.no+' '+j.kks+' '+j.desc+' '+j.dept).toLowerCase().indexOf(filter)>=0;
+    if(f.dept){
+      list = list.filter(function(j){ return j.dept===f.dept; });
+    }
+    if(f.resource){
+      list = list.filter(function(j){ return j.resource===f.resource; });
+    }
+    if(f.text){
+      list = list.filter(function(j){
+        return (j.no+' '+j.kks+' '+j.desc+' '+j.dept).toLowerCase().indexOf(f.text)>=0;
       });
     }
+    updateSummary(list);
     if(!list.length){
       tbody.innerHTML = '<tr><td colspan="7" class="empty-note">ไม่พบข้อมูลที่ตรงกับคำค้นหา</td></tr>';
       return;
@@ -1633,15 +1676,18 @@ function renderWorkList(jobs){
         sel.classList.remove('tag-plan','tag-add');
         if(sel.value==='Plan') sel.classList.add('tag-plan');
         else if(sel.value==='Add') sel.classList.add('tag-add');
-        updateSummary();
+        updateSummary(list);
       });
     });
   }
 
-  updateSummary();
-  renderRows('');
   searchInput.value = '';
-  searchInput.oninput = function(){ renderRows(searchInput.value); };
+  if(deptFilterEl) deptFilterEl.value = '';
+  if(resFilterEl) resFilterEl.value = '';
+  renderRows();
+  searchInput.oninput = function(){ renderRows(); };
+  if(deptFilterEl) deptFilterEl.onchange = function(){ renderRows(); };
+  if(resFilterEl) resFilterEl.onchange = function(){ renderRows(); };
 }
 
 
