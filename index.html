@@ -243,10 +243,11 @@ table{width:100%;border-collapse:collapse;min-width:920px;font-size:13px;}
 thead th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);
   font-weight:700;padding:11px 12px;border-bottom:1px solid var(--border);}
 tbody td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle;}
-tbody tr{position:relative;transition:background .15s;}
+tbody tr{transition:background .15s;}
+tbody tr td:first-child{position:relative;}
 tbody tr:nth-child(even){background:rgba(15,23,42,.014);} html.dark tbody tr:nth-child(even){background:rgba(255,255,255,.02);}
-tbody tr::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--primary);transform:scaleY(0);transition:transform .15s;}
-tbody tr:hover::before{transform:scaleY(1);}
+tbody tr td:first-child::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--primary);transform:scaleY(0);transition:transform .15s;}
+tbody tr:hover td:first-child::before{transform:scaleY(1);}
 tbody tr:hover{background:rgba(30,58,138,.045);}
 tbody tr:last-child td{border-bottom:none;}
 .mono{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12px;}
