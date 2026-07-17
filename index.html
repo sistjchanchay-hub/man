@@ -444,6 +444,14 @@ html.dark .dm-bar-track-lg{background:rgba(255,255,255,.08);}
 .wl-badge-plan{background:#EAF2FE;color:#2563EB;}
 .wl-badge-add{background:#FEF6E7;color:#D97706;}
 .wl-badge-unset{background:#F1F5F9;color:#94A3B8;}
+/* ===== Work List — All Jobs: fixed proportional column widths so Description/Remark
+   don't get squeezed or bloated unpredictably by the browser's auto table layout ===== */
+.worklist-table{table-layout:fixed;}
+.worklist-table th, .worklist-table td{overflow-wrap:break-word;}
+.worklist-table .job-desc{max-width:none;white-space:normal;overflow:visible;text-overflow:clip;
+  line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.worklist-table td.wl-remark{white-space:normal;word-break:break-word;line-height:1.4;
+  color:var(--text-faint);font-size:11.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 </style>
 <body>
 
@@ -1067,8 +1075,8 @@ const SHUTDOWN_TEMPLATE_HTML = `
               <select class="wl-filter-select" id="worklistDeptFilter"><option value="">ทุกแผนก (Department)</option></select>
               <select class="wl-filter-select" id="worklistResourceFilter"><option value="">ทุกประเภท (NIS/Outsource/Area)</option></select>
             </div>
-            <table>
-              <thead><tr><th style="width:100px">Plan/Add</th><th style="width:120px">WO</th><th>Work Type NIS</th><th>Description</th><th style="width:90px">%PG</th><th>Remark</th></tr></thead>
+            <table class="worklist-table">
+              <thead><tr><th style="width:9%">Plan/Add</th><th style="width:11%">WO</th><th style="width:13%">Work Type NIS</th><th style="width:34%">Description</th><th style="width:11%">%PG</th><th style="width:22%">Remark</th></tr></thead>
               <tbody id="worklistTableBody"></tbody>
             </table>
           </div>
@@ -1974,7 +1982,7 @@ function renderWorkList(jobs){
         '<td style="color:var(--text-muted);white-space:nowrap;font-weight:500">'+escapeHtml(j.workTypeNis||'-')+'</td>'+
         '<td class="job-desc" title="'+escapeHtml(j.desc)+'">'+escapeHtml(j.desc)+'</td>'+
         '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
-        '<td style="color:var(--text-faint);font-size:12px;">'+escapeHtml(j.remark||'-')+'</td>'+
+        '<td class="wl-remark">'+escapeHtml(j.remark||'-')+'</td>'+
       '</tr>';
     }).join('');
   }
