@@ -371,12 +371,45 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 .detail-modal-head h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.01em;}
 .detail-modal-head p{margin:4px 0 0;font-size:12px;color:var(--text-muted);}
 .detail-modal-body{padding:4px 26px 26px;overflow-y:auto;flex:1;}
-.dm-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
-.dm-row:last-child{border-bottom:none;}
+@keyframes dmRowIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+.dm-row{display:flex;align-items:center;gap:12px;padding:11px 10px;margin:0 -10px;border-radius:10px;border-left:3px solid transparent;
+  animation:dmRowIn .4s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(min(var(--i,0),18)*.04s);transition:background .18s,transform .18s;}
+.dm-row:hover{background:rgba(79,70,229,.06);transform:translateX(4px);}
+html.dark .dm-row:hover{background:rgba(129,140,248,.09);}
+.dm-row.sev-critical{border-left-color:#DC2626;}
+.dm-row.sev-missing{border-left-color:#F59E0B;}
+.dm-row.sev-near{border-left-color:#2563EB;}
+.dm-row.sev-overdue{border-left-color:#DC2626;}
+.dm-row.sev-material,.dm-row.sev-update,.dm-row.sev-inspection,.dm-row.sev-outsource,.dm-row.sev-approval{border-left-color:#10B981;}
+
+@keyframes iconPulseRing{0%{box-shadow:0 0 0 0 rgba(220,38,38,.4);}70%{box-shadow:0 0 0 8px rgba(220,38,38,0);}100%{box-shadow:0 0 0 0 rgba(220,38,38,0);}}
+.dm-icon-pulse{animation:iconPulseRing 2.2s ease-in-out infinite;}
+
+.dm-bar-row{display:flex;align-items:center;gap:12px;animation:dmRowIn .4s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(min(var(--i,0),18)*.05s);
+  border-radius:10px;padding:9px 10px;margin:0 -10px 2px;transition:background .18s;}
+.dm-bar-row:hover{background:rgba(79,70,229,.06);}
+.dm-bar-track-lg{flex:1;height:10px;border-radius:999px;background:rgba(15,23,42,.06);overflow:hidden;position:relative;}
+html.dark .dm-bar-track-lg{background:rgba(255,255,255,.08);}
+.dm-bar-fill{height:100%;border-radius:999px;width:0;transition:width 1s cubic-bezier(.16,.8,.24,1);position:relative;overflow:hidden;}
+.dm-bar-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.4) 50%,rgba(255,255,255,0) 100%);
+  background-size:200% 100%;animation:dmBarShine 2.4s ease-in-out infinite;}
+@keyframes dmBarShine{0%{background-position:200% 0;}100%{background-position:-40% 0;}}
+.dm-rank{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size:10.5px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+
 .dm-list-table{width:100%;border-collapse:collapse;font-size:12.5px;}
 .dm-list-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card-solid);}
-.dm-list-table td{padding:9px 10px;border-bottom:1px solid var(--border);}
-.dm-list-table tr:hover td{background:rgba(30,58,138,.04);}
+.dm-list-table td{padding:9px 10px;border-bottom:1px solid var(--border);position:relative;}
+.dm-list-table tr{animation:dmRowIn .35s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(min(var(--i,0),18)*.025s);transition:transform .18s;}
+.dm-list-table tr:hover{transform:translateX(3px);}
+.dm-list-table tr:hover td{background:rgba(79,70,229,.06);}
+.dm-list-table tr.pri-critical td:first-child::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#DC2626;}
+.dm-list-table tr.pri-high td:first-child::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#F59E0B;}
+.dm-list-table tr.pri-medium td:first-child::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#94A3B8;}
+
+.dm-gantt-row{animation:dmRowIn .4s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(min(var(--i,0),18)*.05s);border-radius:10px;padding:8px 10px;margin:0 -10px;transition:background .18s;}
+.dm-gantt-row:hover{background:rgba(79,70,229,.06);}
+.dm-gantt-bar{width:0;transition:width 1.1s cubic-bezier(.16,.8,.24,1);}
+
 .view-all{transition:.2s;display:inline-flex;align-items:center;gap:4px;}
 .view-all:hover{transform:translateX(2px);gap:6px;}
 .modal-title{margin:0 0 6px;font-size:17px;font-weight:800;letter-spacing:-.01em;}
@@ -1599,11 +1632,14 @@ function wireGlobalFilterBar(allJobs){
 }
 
 /* ============ GENERIC DETAIL MODAL (View All popups) ============ */
-function openDetailModal(title, subtitle, bodyHtml){
+function openDetailModal(title, subtitle, bodyHtml, afterOpen){
   document.getElementById('detailModalTitle').textContent = title;
   document.getElementById('detailModalSubtitle').textContent = subtitle || '';
   document.getElementById('detailModalBody').innerHTML = bodyHtml;
   document.getElementById('detailModalBackdrop').style.display = 'flex';
+  if(afterOpen){
+    setTimeout(afterOpen, 40);
+  }
 }
 function closeDetailModal(){
   document.getElementById('detailModalBackdrop').style.display = 'none';
@@ -1621,9 +1657,11 @@ function wireViewAllLinks(model){
   const alertsBtn = document.getElementById('viewAllAlerts');
   if(alertsBtn) alertsBtn.onclick = function(){
     const list = model.ALERTS_FULL && model.ALERTS_FULL.length ? model.ALERTS_FULL : model.ALERTS;
-    const rows = list.map(function(a){
+    const rows = list.map(function(a,i){
       const c = ALERT_CFG[a.type];
-      return '<div class="dm-row"><div class="alert-icon" style="background:'+c.bg+';color:'+c.color+';flex-shrink:0;">'+icon(c.icon,'width="14" height="14"')+'</div>'+
+      const pulse = (a.type==='critical') ? ' dm-icon-pulse' : '';
+      return '<div class="dm-row sev-'+a.type+'" style="--i:'+i+';">'+
+        '<div class="alert-icon'+pulse+'" style="background:'+c.bg+';color:'+c.color+';flex-shrink:0;">'+icon(c.icon,'width="14" height="14"')+'</div>'+
         '<div style="min-width:0;flex:1;"><p style="margin:0;font-size:12.5px;font-weight:700;">'+escapeHtml(a.title)+'</p>'+
         '<p style="margin:2px 0 0;font-size:11.5px;color:var(--text-faint);">'+escapeHtml(a.detail)+'</p></div>'+
         '<span class="badge badge-outline" style="flex-shrink:0;">'+escapeHtml(a.kks)+'</span></div>';
@@ -1635,13 +1673,18 @@ function wireViewAllLinks(model){
   if(categoryBtn) categoryBtn.onclick = function(){
     const list = model.WORK_CATEGORY_FULL || model.WORK_CATEGORY;
     const maxV = Math.max(1, Math.max.apply(null, list.map(function(c){ return c.jobs; })));
-    const rows = list.map(function(c){
-      return '<div class="dm-row"><div class="bar-icon" style="background:'+c.color+';flex-shrink:0;">'+icon('<circle cx="12" cy="12" r="4"/>','width="11" height="11"')+'</div>'+
+    const rankColors = ['#F59E0B','#94A3B8','#B45309'];
+    const rows = list.map(function(c,i){
+      const pct = c.jobs/maxV*100;
+      const rank = i<3 ? '<div class="dm-rank" style="background:'+rankColors[i]+';">'+(i+1)+'</div>' : '<div class="bar-icon" style="background:'+c.color+';flex-shrink:0;">'+icon('<circle cx="12" cy="12" r="4"/>','width="11" height="11"')+'</div>';
+      return '<div class="dm-bar-row" style="--i:'+i+';">'+rank+
         '<div style="width:140px;flex-shrink:0;font-size:12.5px;font-weight:600;">'+escapeHtml(c.category)+'</div>'+
-        '<div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:'+(c.jobs/maxV*100)+'%;background:'+c.color+';"></div></div>'+
+        '<div class="dm-bar-track-lg"><div class="dm-bar-fill" data-w="'+pct+'" style="background:linear-gradient(90deg,'+c.color+'99,'+c.color+');"></div></div>'+
         '<div style="width:34px;text-align:right;font-weight:800;font-size:12.5px;">'+c.jobs+'</div></div>';
     }).join('');
-    openDetailModal('Work Category — Full Breakdown', list.length+' departments', rows);
+    openDetailModal('Work Category — Full Breakdown', list.length+' departments', rows, function(){
+      document.querySelectorAll('#detailModalBody .dm-bar-fill').forEach(function(el){ el.style.width = el.getAttribute('data-w')+'%'; });
+    });
   };
 
   const criticalBtn = document.getElementById('viewAllCritical');
@@ -1649,9 +1692,10 @@ function wireViewAllLinks(model){
     const list = model.CRITICAL_JOBS_FULL || model.CRITICAL_JOBS;
     const statusBadge = {"Completed":"success","In Progress":"secondary","Cancelled":"slate","Not Started":"slate"};
     const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
+    const priClass = {"Critical":"pri-critical","High":"pri-high","Medium":"pri-medium"};
     const rows = '<table class="dm-list-table"><thead><tr><th>KKS</th><th>Description</th><th>Owner</th><th>Status</th><th>Priority</th></tr></thead><tbody>'+
-      list.map(function(j){
-        return '<tr><td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.kks)+'</td>'+
+      list.map(function(j,i){
+        return '<tr class="'+(priClass[j.priority]||'')+'" style="--i:'+i+';"><td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.kks)+'</td>'+
           '<td>'+escapeHtml(j.desc)+'</td><td style="color:var(--text-muted)">'+escapeHtml(j.owner)+'</td>'+
           '<td><span class="badge badge-'+(statusBadge[j.status]||'slate')+'">'+j.status+'</span></td>'+
           '<td><span class="badge badge-'+priorityBadge[j.priority]+'">'+j.priority+'</span></td></tr>';
@@ -1662,11 +1706,13 @@ function wireViewAllLinks(model){
   const ganttBtn = document.getElementById('viewAllGantt');
   if(ganttBtn) ganttBtn.onclick = function(){
     const list = model.GANTT_ITEMS_FULL || model.GANTT_ITEMS;
-    const rows = list.map(function(it){
-      return '<div class="gantt-row"><div class="gantt-label" style="width:220px;">'+escapeHtml(it.name)+'</div>'+
-        '<div class="gantt-track"><div class="gantt-bar" style="left:0%;width:'+it.progress+'%;background:'+(it.critical?'linear-gradient(90deg,#F87171,#DC2626)':'linear-gradient(90deg,var(--grad-from),var(--grad-to))')+';">'+it.progress+'%</div></div></div>';
+    const rows = list.map(function(it,i){
+      return '<div class="dm-gantt-row gantt-row" style="--i:'+i+';"><div class="gantt-label" style="width:220px;">'+escapeHtml(it.name)+'</div>'+
+        '<div class="gantt-track"><div class="gantt-bar dm-gantt-bar" data-w="'+it.progress+'" style="left:0%;background:'+(it.critical?'linear-gradient(90deg,#F87171,#DC2626)':'linear-gradient(90deg,var(--grad-from),var(--grad-to))')+';">'+it.progress+'%</div></div></div>';
     }).join('');
-    openDetailModal('Full Gantt — All Departments', list.length+' department groups · '+it_range(list), '<div class="gantt-wrap">'+rows+'</div>');
+    openDetailModal('Full Gantt — All Departments', list.length+' department groups · '+it_range(list), '<div class="gantt-wrap">'+rows+'</div>', function(){
+      document.querySelectorAll('#detailModalBody .dm-gantt-bar').forEach(function(el){ el.style.width = el.getAttribute('data-w')+'%'; });
+    });
   };
   function it_range(list){
     if(!list.length) return '';
@@ -1676,14 +1722,15 @@ function wireViewAllLinks(model){
   const activitiesBtn = document.getElementById('viewAllActivities');
   if(activitiesBtn) activitiesBtn.onclick = function(){
     const list = model.ACTIVITIES;
-    const rows = list.map(function(a){
+    const rows = list.map(function(a,i){
       const c = ACT_CFG[a.type];
-      return '<div class="dm-row"><div class="activity-icon" style="background:'+c.bg+';color:'+c.color+';flex-shrink:0;">'+icon(c.icon,'width="14" height="14"')+'</div>'+
+      return '<div class="dm-row sev-'+a.type+'" style="--i:'+i+';">'+
+        '<div class="activity-icon" style="background:'+c.bg+';color:'+c.color+';flex-shrink:0;">'+icon(c.icon,'width="14" height="14"')+'</div>'+
         '<div style="min-width:0;flex:1;"><p style="margin:0;font-size:12.5px;font-weight:700;">'+escapeHtml(a.title)+'</p>'+
         '<p style="margin:2px 0 0;font-size:11.5px;color:var(--text-faint);">'+escapeHtml(a.detail)+'</p></div>'+
         '<span style="font-size:10.5px;color:var(--text-faint);flex-shrink:0;">'+escapeHtml(a.time)+'</span></div>';
     }).join('');
-    openDetailModal('Recent Activities & Highlights', list.length+' items', rows);
+    openDetailModal('Recent Activities & Highlights', list.length+' items', rows || '<p class="empty-note">ไม่มีกิจกรรมล่าสุด</p>');
   };
 }
 
