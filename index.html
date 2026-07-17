@@ -457,6 +457,16 @@ html.dark .dm-bar-track-lg{background:rgba(255,255,255,.08);}
 .worklist-table td.wl-remark{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   color:var(--text-faint);font-size:11.5px;}
 .worklist-table td.mono{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* ===== Critical & High Priority Jobs: tighter, professional row density.
+   table-layout:fixed + colgroup keeps the 8 columns proportioned sensibly instead of the
+   browser's auto layout stretching short columns (Status/Priority/Remaining) into huge gaps. */
+.critical-jobs-table{table-layout:fixed;width:100%;min-width:0;}
+.critical-jobs-table th, .critical-jobs-table td{overflow:hidden;overflow-wrap:break-word;}
+.critical-jobs-table td{padding:9px 12px;font-size:12.5px;}
+.critical-jobs-table thead th{padding:9px 12px;}
+.critical-jobs-table .job-desc{max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.critical-jobs-table td.mono{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.critical-jobs-table td.cj-owner{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 </style>
 <body>
 
@@ -1022,8 +1032,11 @@ const SHUTDOWN_TEMPLATE_HTML = `
         <div class="card">
           <div class="card-head"><h3 class="card-title">Critical &amp; High Priority Jobs</h3><span class="badge badge-outline" id="criticalJobsCount"></span></div>
           <div class="card-body table-wrap" style="max-height:420px;overflow-y:auto;">
-            <table>
-              <thead><tr><th>KKS</th><th>WO</th><th>Description</th><th>Owner</th><th style="width:150px">Progress</th><th>Status</th><th style="text-align:center">Remaining</th><th>Priority</th></tr></thead>
+            <table class="critical-jobs-table">
+              <colgroup>
+                <col style="width:9%"><col style="width:9%"><col style="width:28%"><col style="width:17%"><col style="width:13%"><col style="width:10%"><col style="width:7%"><col style="width:7%">
+              </colgroup>
+              <thead><tr><th>KKS</th><th>WO</th><th>Description</th><th>Owner</th><th>Progress</th><th>Status</th><th style="text-align:center">Remaining</th><th>Priority</th></tr></thead>
               <tbody id="jobsTable"></tbody>
             </table>
           </div>
@@ -1599,7 +1612,7 @@ function renderShutdownDashboard(model){
       return '<tr><td class="mono" style="color:var(--text-faint)">'+j.kks+'</td>'+
       '<td class="mono" style="color:var(--primary);font-weight:700">'+j.wo+'</td>'+
       '<td class="job-desc">'+j.desc+'</td>'+
-      '<td style="color:var(--text-muted);white-space:nowrap;font-weight:500">'+j.owner+'</td>'+
+      '<td class="cj-owner" style="color:var(--text-muted);font-weight:500">'+j.owner+'</td>'+
       '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
       '<td><span class="badge badge-'+(statusBadge[j.status]||'slate')+'">'+j.status+'</span></td>'+
       '<td style="text-align:center;font-weight:800;'+(j.remaining<0?'color:var(--danger)':'')+'">'+(j.remaining<0 ? Math.abs(j.remaining)+'d late' : j.remaining+'d')+'</td>'+
