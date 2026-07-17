@@ -344,6 +344,15 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 .wl-filter-select:focus{box-shadow:0 0 0 3px rgba(30,58,138,.12);}
 @media (max-width:640px){.worklist-filters{flex-direction:column;}.wl-filter-select{width:100%;}}
 
+.global-filter-card{padding:14px 18px;}
+.global-filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.gf-label{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:var(--text);flex-shrink:0;}
+.gf-label svg{color:var(--primary);}
+.gf-summary{font-size:11.5px;color:var(--text-faint);font-weight:600;margin-left:auto;}
+.gf-reset{height:36px;border-radius:10px;border:1px solid var(--border);background:var(--card-solid);color:var(--text-muted);font-size:11.5px;font-weight:700;padding:0 14px;cursor:pointer;transition:.15s;}
+.gf-reset:hover{color:var(--danger);border-color:rgba(225,29,72,.3);}
+@media (max-width:640px){.global-filter-bar{flex-direction:column;align-items:stretch;}.gf-summary{margin-left:0;}}
+
 .modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(10,15,28,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;
   animation:modalBackdropIn .22s ease;}
 @keyframes modalBackdropIn{from{opacity:0;}to{opacity:1;}}
@@ -863,6 +872,21 @@ const GENERIC_TEMPLATE_HTML = `
 `;
 
 const SHUTDOWN_TEMPLATE_HTML = `
+      <section class="section" style="animation-delay:.0s">
+        <div class="card global-filter-card">
+          <div class="global-filter-bar">
+            <div class="gf-label">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
+              กรองทั้งหน้า
+            </div>
+            <select class="wl-filter-select" id="globalDeptFilter"><option value="">ทุกแผนก (Department)</option></select>
+            <select class="wl-filter-select" id="globalResourceFilter"><option value="">ทุกประเภท (NIS/Outsource/Area)</option></select>
+            <span class="gf-summary" id="globalFilterSummary"></span>
+            <button class="gf-reset" id="globalFilterReset" type="button">ล้างตัวกรอง</button>
+          </div>
+        </div>
+      </section>
+
       <section class="section" style="animation-delay:.0s"><div class="kpi-grid" id="kpiGrid"></div></section>
 
       <section class="section" style="animation-delay:.06s">
@@ -921,8 +945,8 @@ const SHUTDOWN_TEMPLATE_HTML = `
 
       <section class="section" style="animation-delay:.14s">
         <div class="card">
-          <div class="card-head"><h3 class="card-title">Top 10 Critical Jobs</h3><span class="view-all" id="viewAllCritical">View All</span></div>
-          <div class="card-body table-wrap">
+          <div class="card-head"><h3 class="card-title">Critical &amp; High Priority Jobs</h3><span class="badge badge-outline" id="criticalJobsCount"></span></div>
+          <div class="card-body table-wrap" style="max-height:420px;overflow-y:auto;">
             <table>
               <thead><tr><th>KKS</th><th>WO</th><th>Description</th><th>Owner</th><th style="width:150px">Progress</th><th>Status</th><th style="text-align:center">Remaining</th><th>Priority</th></tr></thead>
               <tbody id="jobsTable"></tbody>
@@ -1040,7 +1064,7 @@ const ACT_CFG = {
 };
 
 /* ---- model builder ---- */
-function buildShutdownModel(rows){
+function parseShutdownJobs(rows){
   const now = new Date();
 
   const jobs = rows.map(function(r){
@@ -1093,6 +1117,11 @@ function buildShutdownModel(rows){
     };
   });
 
+  return jobs;
+}
+
+function buildShutdownModel(jobs){
+  const now = new Date();
   const totalJobs = jobs.length;
   const completed = jobs.filter(function(j){ return j.status==='Completed'; }).length;
   const inProgress = jobs.filter(function(j){ return j.status==='In Progress'; }).length;
@@ -1165,8 +1194,8 @@ function buildShutdownModel(rows){
         priority: j.priority===3?'Critical': j.priority===2?'High':'Medium'
       };
     });
-  const CRITICAL_JOBS = rankedJobs.slice(0,10);
-  const CRITICAL_JOBS_FULL = rankedJobs.slice(0,60);
+  const CRITICAL_JOBS = rankedJobs;
+  const CRITICAL_JOBS_FULL = rankedJobs;
 
   const ganttGroups = {};
   datedJobs.forEach(function(j){
@@ -1394,6 +1423,8 @@ function renderShutdownDashboard(model){
   (function(){
     const statusBadge = {"Completed":"success","In Progress":"secondary","Cancelled":"slate","Not Started":"slate"};
     const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
+    const countEl = document.getElementById('criticalJobsCount');
+    if(countEl) countEl.textContent = CRITICAL_JOBS.length+' jobs';
     document.getElementById('jobsTable').innerHTML = CRITICAL_JOBS.length ? CRITICAL_JOBS.map(function(j){
       return '<tr><td class="mono" style="color:var(--text-faint)">'+j.kks+'</td>'+
       '<td class="mono" style="color:var(--primary);font-weight:700">'+j.wo+'</td>'+
@@ -1479,6 +1510,53 @@ function renderShutdownDashboard(model){
 
   /* VIEW ALL — wire up detail modals for each section */
   wireViewAllLinks(model);
+}
+
+/* ============ GLOBAL FILTER BAR (Department + Resource, filters the whole dashboard) ============ */
+function wireGlobalFilterBar(allJobs){
+  const deptSel = document.getElementById('globalDeptFilter');
+  const resSel = document.getElementById('globalResourceFilter');
+  const summaryEl = document.getElementById('globalFilterSummary');
+  const resetBtn = document.getElementById('globalFilterReset');
+  if(!deptSel || !resSel) return;
+
+  const resourceLabel = {"NIS":"NIS (Internal)","Outsource":"Outsource","Area":"Area","Pending":"Pending","Cancelled":"Cancelled"};
+
+  const depts = Array.from(new Set(allJobs.map(function(j){ return j.dept; }).filter(Boolean))).sort();
+  deptSel.innerHTML = '<option value="">ทุกแผนก (Department)</option>' +
+    depts.map(function(d){ return '<option value="'+escapeHtml(d)+'">'+escapeHtml(d)+'</option>'; }).join('');
+
+  const order = ['NIS','Outsource','Area','Pending','Cancelled'];
+  const resources = Array.from(new Set(allJobs.map(function(j){ return j.resource; }).filter(Boolean)))
+    .sort(function(a,b){ return order.indexOf(a)-order.indexOf(b); });
+  resSel.innerHTML = '<option value="">ทุกประเภท (NIS/Outsource/Area)</option>' +
+    resources.map(function(r){ return '<option value="'+escapeHtml(r)+'">'+escapeHtml(resourceLabel[r]||r)+'</option>'; }).join('');
+
+  function updateSummary(filteredCount){
+    if(summaryEl) summaryEl.textContent = 'แสดง '+filteredCount+' / '+allJobs.length+' งาน';
+  }
+
+  function applyGlobalFilter(){
+    const dept = deptSel.value;
+    const resource = resSel.value;
+    let filtered = CURRENT_ALL_JOBS || allJobs;
+    if(dept) filtered = filtered.filter(function(j){ return j.dept===dept; });
+    if(resource) filtered = filtered.filter(function(j){ return j.resource===resource; });
+    updateSummary(filtered.length);
+    const newModel = buildShutdownModel(filtered);
+    renderShutdownDashboard(newModel);
+  }
+
+  updateSummary(allJobs.length);
+  deptSel.onchange = applyGlobalFilter;
+  resSel.onchange = applyGlobalFilter;
+  if(resetBtn){
+    resetBtn.onclick = function(){
+      deptSel.value = '';
+      resSel.value = '';
+      applyGlobalFilter();
+    };
+  }
 }
 
 /* ============ GENERIC DETAIL MODAL (View All popups) ============ */
@@ -1876,6 +1954,7 @@ function renderRecent(){
 /* ============ PINNED DASHBOARDS (sidebar) ============ */
 const PINNED_KEY = 'sheetInsights.pinned';
 let CURRENT_SHEET = null; /* { id, gid, defaultName } for the currently loaded dashboard */
+let CURRENT_ALL_JOBS = null; /* unfiltered jobs array for the Shutdown template, used by the global filter bar */
 
 function getPinned(){
   try{
@@ -2043,12 +2122,15 @@ function performLoad(id, gid){
       });
       if(!dataRows.length) throw new Error('พบโครงสร้าง Shutdown Work List แต่ไม่มีแถวข้อมูล');
       mainContentEl.innerHTML = SHUTDOWN_TEMPLATE_HTML;
-      const model = buildShutdownModel(dataRows);
+      const allJobs = parseShutdownJobs(dataRows);
+      CURRENT_ALL_JOBS = allJobs;
+      const model = buildShutdownModel(allJobs);
       label = 'Shutdown Work List · '+model.KPIS.totalJobs+' jobs';
       name = 'Shutdown Maintenance Dashboard';
       CURRENT_SHEET = { id:id, gid:gid, defaultName:name };
       saveRecent({ id:id, gid:gid, label:label });
       renderShutdownDashboard(model);
+      wireGlobalFilterBar(allJobs);
     } else {
       const table = extractTable(csvText);
       if(!table.header.length || !table.rows.length) throw new Error('ไม่พบข้อมูลในรูปแบบตาราง — ตรวจสอบว่า Sheet มีข้อมูลและหัวตาราง');
