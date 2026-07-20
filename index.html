@@ -371,7 +371,8 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 .detail-modal-head{padding:24px 26px 16px;flex-shrink:0;}
 .detail-modal-head h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.01em;}
 .detail-modal-head p{margin:4px 0 0;font-size:12px;color:var(--text-muted);}
-.detail-modal-body{padding:4px 26px 26px;overflow-y:auto;flex:1;}
+.detail-modal-body{padding:4px 26px 26px;overflow-y:auto;overflow-x:hidden;flex:1;}
+.dm-table-wrap{overflow-x:auto;max-width:100%;}
 @keyframes dmRowIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
 .dm-row{display:flex;align-items:center;gap:12px;padding:11px 10px;margin:0 -10px;border-radius:10px;border-left:3px solid transparent;
   animation:dmRowIn .4s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(min(var(--i,0),18)*.04s);transition:background .18s,transform .18s;}
@@ -1754,7 +1755,7 @@ function renderShutdownDashboard(model){
 function fmtDatePlan(d){ return d ? d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '-'; }
 function openTeamJobsModal(deptName, jobList){
   const list = jobList || [];
-  const rows = '<table class="dm-list-table"><thead><tr>'+
+  const rows = '<div class="table-wrap dm-table-wrap"><table class="dm-list-table"><thead><tr>'+
       '<th>Plan/Add</th><th>WO</th><th>Description</th><th>Response (A)</th><th>Response (R)</th>'+
       '<th>Start Plan</th><th>Finish Plan</th><th>Response NIS</th><th>%PG</th><th>Remark</th>'+
     '</tr></thead><tbody>'+
@@ -1771,7 +1772,7 @@ function openTeamJobsModal(deptName, jobList){
         '<td style="font-weight:800;">'+j.progress+'%</td>'+
         '<td style="color:var(--text-faint);" title="'+escapeHtml(j.remark||'')+'">'+escapeHtml(j.remark||'-')+'</td>'+
       '</tr>';
-    }).join('') + '</tbody></table>';
+    }).join('') + '</tbody></table></div>';
   openDetailModal('ทีม: '+deptName, list.length+' งานที่ทีมนี้รับผิดชอบ (กรองตาม Confirm NIS/Outsource ที่เลือกอยู่)', rows || '<p class="empty-note">ไม่มีงานในทีมนี้</p>');
 }
 /* ============ STATUS JOB LIST MODAL (drill-down from Work Status Overview) ============ */
@@ -1784,7 +1785,7 @@ const STATUS_MODAL_DESC = {
 };
 function openStatusJobsModal(statusName, jobList){
   const list = jobList || [];
-  const rows = '<table class="dm-list-table"><thead><tr>'+
+  const rows = '<div class="table-wrap dm-table-wrap"><table class="dm-list-table"><thead><tr>'+
       '<th>Work Type NIS</th><th>Plan/Add</th><th>WO</th><th>Description</th><th>Owner</th>'+
       '<th>Start Plan</th><th>Finish Plan</th><th>%PG</th><th>Remark</th>'+
     '</tr></thead><tbody>'+
@@ -1800,7 +1801,7 @@ function openStatusJobsModal(statusName, jobList){
         '<td style="font-weight:800;">'+j.progress+'%</td>'+
         '<td style="color:var(--text-faint);" title="'+escapeHtml(j.remark||'')+'">'+escapeHtml(j.remark||'-')+'</td>'+
       '</tr>';
-    }).join('') + '</tbody></table>';
+    }).join('') + '</tbody></table></div>';
   openDetailModal('สถานะ: '+statusName, list.length+' งาน — '+(STATUS_MODAL_DESC[statusName]||''), rows || '<p class="empty-note">ไม่มีงานในสถานะนี้</p>');
 }
 /* ============ MULTI-SELECT CHECKBOX DROPDOWN ============
@@ -2119,13 +2120,13 @@ function wireViewAllLinks(model){
     const list = model.CRITICAL_JOBS_FULL || model.CRITICAL_JOBS;
     const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
     const priClass = {"Critical":"pri-critical","High":"pri-high","Medium":"pri-medium"};
-    const rows = '<table class="dm-list-table"><thead><tr><th>KKS</th><th>Description</th><th>Owner</th><th>Status</th><th>Priority</th></tr></thead><tbody>'+
+    const rows = '<div class="table-wrap dm-table-wrap"><table class="dm-list-table"><thead><tr><th>KKS</th><th>Description</th><th>Owner</th><th>Status</th><th>Priority</th></tr></thead><tbody>'+
       list.map(function(j,i){
         return '<tr class="'+(priClass[j.priority]||'')+'" style="--i:'+i+';"><td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.kks)+'</td>'+
           '<td>'+escapeHtml(j.desc)+'</td><td style="color:var(--text-muted)">'+escapeHtml(j.owner)+'</td>'+
           '<td><span class="badge badge-'+(STATUS_BADGE_MAP[j.status]||'slate')+'">'+j.status+'</span></td>'+
           '<td><span class="badge badge-'+priorityBadge[j.priority]+'">'+j.priority+'</span></td></tr>';
-      }).join('') + '</tbody></table>';
+      }).join('') + '</tbody></table></div>';
     openDetailModal('Critical & High Priority Jobs', list.length+' jobs ranked by priority', rows);
   };
   const ganttBtn = document.getElementById('viewAllGantt');
