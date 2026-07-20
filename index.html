@@ -978,7 +978,7 @@ const SHUTDOWN_TEMPLATE_HTML = `
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><h3 class="card-title">Resource Allocation</h3><span class="view-all">View All</span></div>
+            <div class="card-head"><h3 class="card-title">Resource Allocation</h3><span class="view-all" id="viewAllResource">View All</span></div>
             <div class="card-body">
               <div class="pie-wrap" id="resourcePie"><div class="donut-hole" id="resourceHole" style="inset:30px;"></div>
                 <div class="donut-center"><p class="big grad-text" id="resourceTotal" style="font-size:22px">0</p><p class="small">Total Jobs</p></div>
@@ -1318,7 +1318,8 @@ function buildShutdownModel(jobs){
   const resCounts = {};
   jobs.forEach(function(j){ if(j.status!=='Cancelled'){ resCounts[j.resource]=(resCounts[j.resource]||0)+1; } });
   const RESOURCE_PIE = Object.entries(resCounts).map(function(e){
-    return { name: e[0]==='NIS'?'NIS (Internal)':e[0], value:e[1], color:resColors[e[0]]||'#94A3B8' };
+    return { name: e[0]==='NIS'?'NIS (Internal)':e[0], value:e[1], color:resColors[e[0]]||'#94A3B8',
+      jobList: jobs.filter(function(j){ return j.resource===e[0] && j.status!=='Cancelled'; }) };
   });
   /* Resource Allocation broken down per Work Type NIS department, per user request */
   const RESOURCE_BY_DEPT = WORK_CATEGORY_FULL.slice(0,8).map(function(c){
@@ -1804,6 +1805,28 @@ function openStatusJobsModal(statusName, jobList){
     }).join('') + '</tbody></table></div>';
   openDetailModal('สถานะ: '+statusName, list.length+' งาน — '+(STATUS_MODAL_DESC[statusName]||''), rows || '<p class="empty-note">ไม่มีงานในสถานะนี้</p>');
 }
+/* ============ RESOURCE JOB LIST MODAL (drill-down from Resource Allocation) ============ */
+function openResourceJobsModal(resourceName, jobList){
+  const list = jobList || [];
+  const rows = '<div class="table-wrap dm-table-wrap"><table class="dm-list-table"><thead><tr>'+
+      '<th>Work Type NIS</th><th>Plan/Add</th><th>WO</th><th>Description</th><th>Owner</th>'+
+      '<th>Start Plan</th><th>Finish Plan</th><th>%PG</th><th>Remark</th>'+
+    '</tr></thead><tbody>'+
+    list.map(function(j,i){
+      return '<tr style="--i:'+i+';">'+
+        '<td style="white-space:nowrap;">'+escapeHtml(j.workTypeNis||j.dept||'-')+'</td>'+
+        '<td>'+(j.planAddRaw?escapeHtml(j.planAddRaw):'<span style="color:var(--text-faint)">-</span>')+'</td>'+
+        '<td class="mono" style="color:var(--primary);font-weight:700">'+escapeHtml(j.wo||'-')+'</td>'+
+        '<td class="job-desc" title="'+escapeHtml(j.desc)+'">'+escapeHtml(j.desc)+'</td>'+
+        '<td style="color:var(--text-muted);white-space:nowrap;">'+escapeHtml(j.owner||'-')+'</td>'+
+        '<td style="white-space:nowrap;">'+fmtDatePlan(j.start)+'</td>'+
+        '<td style="white-space:nowrap;">'+fmtDatePlan(j.finish)+'</td>'+
+        '<td style="font-weight:800;">'+j.progress+'%</td>'+
+        '<td style="color:var(--text-faint);" title="'+escapeHtml(j.remark||'')+'">'+escapeHtml(j.remark||'-')+'</td>'+
+      '</tr>';
+    }).join('') + '</tbody></table></div>';
+  openDetailModal('ประเภท: '+resourceName, list.length+' งานที่มอบหมายให้ '+resourceName, rows || '<p class="empty-note">ไม่มีงานในประเภทนี้</p>');
+}
 /* ============ MULTI-SELECT CHECKBOX DROPDOWN ============
    Lets the user tick more than one value per filter (e.g. NIS + Outsource together) instead of
    picking a single value from a <select>. `selectedSet` is a Set the caller owns and mutates is
@@ -2111,6 +2134,27 @@ function wireViewAllLinks(model){
         row.addEventListener('click', function(){
           const c = list[+row.dataset.teamIdx];
           openTeamJobsModal(c.category, c.jobList);
+        });
+      });
+    });
+  };
+  const resourceBtn = document.getElementById('viewAllResource');
+  if(resourceBtn) resourceBtn.onclick = function(){
+    const items = model.RESOURCE_PIE || [];
+    const totalAll = items.reduce(function(s,x){return s+x.value;},0);
+    const rows = items.map(function(d,i){
+      return '<div class="dm-bar-row" data-resource-idx="'+i+'" style="--i:'+i+';cursor:pointer;">'+
+        '<div class="bar-icon" style="background:'+d.color+'">'+icon('<circle cx="12" cy="12" r="4"/>','width="11" height="11"')+'</div>'+
+        '<div style="width:140px;flex-shrink:0;font-size:12.5px;font-weight:600;">'+escapeHtml(d.name)+'</div>'+
+        '<div class="dm-bar-track-lg"><div class="dm-bar-fill" data-w="'+(totalAll? d.value/totalAll*100:0)+'" style="background:linear-gradient(90deg,'+d.color+'99,'+d.color+');"></div></div>'+
+        '<div style="width:34px;text-align:right;font-weight:800;font-size:12.5px;">'+d.value+'</div></div>';
+    }).join('');
+    openDetailModal('Resource Allocation — ภาพรวมทั้งหมด', totalAll+' งาน · คลิกแต่ละประเภทเพื่อดูรายการงาน', rows, function(){
+      document.querySelectorAll('#detailModalBody .dm-bar-fill').forEach(function(el){ el.style.width = el.getAttribute('data-w')+'%'; });
+      document.querySelectorAll('#detailModalBody [data-resource-idx]').forEach(function(row){
+        row.addEventListener('click', function(){
+          const d = items[+row.dataset.resourceIdx];
+          openResourceJobsModal(d.name, d.jobList);
         });
       });
     });
