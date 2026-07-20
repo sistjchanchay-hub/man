@@ -1758,7 +1758,7 @@ function openStatusJobsModal(statusName, jobList){
 function openResourceJobsModal(resourceName, jobList){
   const list = jobList || [];
   const rows = '<div class="table-wrap dm-table-wrap"><table class="dm-list-table"><thead><tr>'+
-      '<th>Work Type NIS</th><th>Plan/Add</th><th>WO</th><th>Description</th><th>Owner</th>'+
+      '<th>Work Type NIS</th><th>Plan/Add</th><th>WO</th><th>Description</th><th>Owner</th><th>ผู้รับงาน (Response NIS)</th>'+
       '<th>Start Plan</th><th>Finish Plan</th><th>%PG</th><th>Remark</th>'+
     '</tr></thead><tbody>'+
     list.map(function(j,i){
@@ -1768,6 +1768,7 @@ function openResourceJobsModal(resourceName, jobList){
         '<td class="mono" style="color:var(--primary);font-weight:700">'+escapeHtml(j.wo||'-')+'</td>'+
         '<td class="job-desc" title="'+escapeHtml(j.desc)+'">'+escapeHtml(j.desc)+'</td>'+
         '<td style="color:var(--text-muted);white-space:nowrap;">'+escapeHtml(j.owner||'-')+'</td>'+
+        '<td style="white-space:nowrap;font-weight:600;">'+(j.responseNameNis?escapeHtml(j.responseNameNis):'<span style="color:var(--text-faint)">-</span>')+'</td>'+
         '<td style="white-space:nowrap;">'+fmtDatePlan(j.start)+'</td>'+
         '<td style="white-space:nowrap;">'+fmtDatePlan(j.finish)+'</td>'+
         '<td style="font-weight:800;">'+j.progress+'%</td>'+
