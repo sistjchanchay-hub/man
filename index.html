@@ -451,16 +451,7 @@ html.dark .dm-bar-track-lg{background:rgba(255,255,255,.08);}
 .worklist-table td.wl-remark{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   color:var(--text-faint);font-size:11.5px;}
 .worklist-table td.mono{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-/* ===== Critical & High Priority Jobs: tighter, professional row density.
-   table-layout:fixed + colgroup keeps the 8 columns proportioned sensibly instead of the
-   browser's auto layout stretching short columns (Status/Priority/Remaining) into huge gaps. */
-.critical-jobs-table{table-layout:fixed;width:100%;min-width:0;}
-.critical-jobs-table th, .critical-jobs-table td{overflow:hidden;overflow-wrap:break-word;}
-.critical-jobs-table td{padding:9px 12px;font-size:12.5px;}
-.critical-jobs-table thead th{padding:9px 12px;}
-.critical-jobs-table .job-desc{max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.critical-jobs-table td.mono{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.critical-jobs-table td.cj-owner{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
 </style>
 <body>
 <div class="app-shell">
@@ -989,20 +980,6 @@ const SHUTDOWN_TEMPLATE_HTML = `
           </div>
         </div>
       </section>
-      <section class="section" style="animation-delay:.14s">
-        <div class="card">
-          <div class="card-head"><h3 class="card-title">Critical &amp; High Priority Jobs</h3><span class="badge badge-outline" id="criticalJobsCount"></span></div>
-          <div class="card-body table-wrap" style="max-height:420px;overflow-y:auto;">
-            <table class="critical-jobs-table">
-              <colgroup>
-                <col style="width:9%"><col style="width:9%"><col style="width:28%"><col style="width:17%"><col style="width:13%"><col style="width:10%"><col style="width:7%"><col style="width:7%">
-              </colgroup>
-              <thead><tr><th>KKS</th><th>WO</th><th>Description</th><th>Owner</th><th>Progress</th><th>Status</th><th style="text-align:center">Remaining</th><th>Priority</th></tr></thead>
-              <tbody id="jobsTable"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
       <section class="section" style="animation-delay:.18s">
         <div class="card">
           <div class="card-head">
@@ -1342,18 +1319,6 @@ function buildShutdownModel(jobs){
     const totalCost = list.reduce(function(s,j){ return s+j.cost; },0);
     return { name:r.name, key:r.key, color:r.color, jobs:list.length, completed:completedN, inProgress:inProgN, avgProgress:avgP, totalCost:totalCost, jobList:list };
   });
-  const rankedJobs = jobs.filter(function(j){ return j.status!=='Cancelled'; })
-    .sort(function(a,b){ return (b.priority-a.priority) || (b.cost-a.cost); })
-    .map(function(j){
-      const remaining = j.finish ? daysBetween(now, j.finish) : 0;
-      return {
-        kks: j.kks || '-', wo: j.wo || ('JOB-'+(j.no||'—')), desc: j.desc, owner: j.owner,
-        progress: j.progress, status: j.status, remaining: remaining,
-        priority: j.priority===3?'Critical': j.priority===2?'High':'Medium'
-      };
-    });
-  const CRITICAL_JOBS = rankedJobs;
-  const CRITICAL_JOBS_FULL = rankedJobs;
   const deptColorMap = {};
   WORK_CATEGORY_FULL.forEach(function(c){ deptColorMap[c.category]=c.color; });
   const ganttGroups = {};
@@ -1433,13 +1398,13 @@ function buildShutdownModel(jobs){
       ? {label:"Remaining Days", value:0, display:function(){ return "-"; }, icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14v3"/><path d="m10.5 15.5 1.5 1.5 1.5-1.5"/>', trend:"ยังไม่มีข้อมูลกำหนดการในชีต", tone:"warning", pct:0}
       : {label:"Remaining Days", value:KPIS.remainingDays, suffix:" Days", icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14v3"/><path d="m10.5 15.5 1.5 1.5 1.5-1.5"/>', trend:"Until shutdown end", tone:"warning", pct: totalDays? KPIS.remainingDays/totalDays*100:0}),
   ];
-  return { PROJECT, KPIS, WORK_STATUS, DAILY_PROGRESS, ALERTS, ALERTS_FULL, WORK_CATEGORY, WORK_CATEGORY_FULL, RESOURCE_PIE, RESOURCE_BY_DEPT, RESOURCE_COMPARE, CRITICAL_JOBS, CRITICAL_JOBS_FULL, GANTT_ITEMS, GANTT_ITEMS_FULL, BUDGET, BUDGET_ITEMS, BUDGET_BY_DEPT, PLAN_ADD, ACTIVITIES, KPI_DEFS, minStart, maxFinish, totalDays, jobs };
+  return { PROJECT, KPIS, WORK_STATUS, DAILY_PROGRESS, ALERTS, ALERTS_FULL, WORK_CATEGORY, WORK_CATEGORY_FULL, RESOURCE_PIE, RESOURCE_BY_DEPT, RESOURCE_COMPARE, GANTT_ITEMS, GANTT_ITEMS_FULL, BUDGET, BUDGET_ITEMS, BUDGET_BY_DEPT, PLAN_ADD, ACTIVITIES, KPI_DEFS, minStart, maxFinish, totalDays, jobs };
 }
 /* ---- renderer ---- */
 function renderShutdownDashboard(model){
   const KPIS=model.KPIS, WORK_STATUS=model.WORK_STATUS, DAILY_PROGRESS=model.DAILY_PROGRESS,
         ALERTS=model.ALERTS, WORK_CATEGORY=model.WORK_CATEGORY, RESOURCE_PIE=model.RESOURCE_PIE,
-        RESOURCE_BY_DEPT=model.RESOURCE_BY_DEPT, CRITICAL_JOBS=model.CRITICAL_JOBS, GANTT_ITEMS=model.GANTT_ITEMS, BUDGET=model.BUDGET,
+        RESOURCE_BY_DEPT=model.RESOURCE_BY_DEPT, GANTT_ITEMS=model.GANTT_ITEMS, BUDGET=model.BUDGET,
         BUDGET_ITEMS=model.BUDGET_ITEMS, BUDGET_BY_DEPT=model.BUDGET_BY_DEPT, PLAN_ADD=model.PLAN_ADD, ACTIVITIES=model.ACTIVITIES, KPI_DEFS=model.KPI_DEFS,
         PROJECT=model.PROJECT;
   const sdTitle = (typeof CURRENT_SHEET !== 'undefined' && CURRENT_SHEET && CURRENT_SHEET.defaultName) ? CURRENT_SHEET.defaultName : 'Shutdown Maintenance Dashboard';
@@ -1616,22 +1581,6 @@ function renderShutdownDashboard(model){
       '<div class="progress-track" style="margin:0"><div class="progress-fill" id="planadd-bar-'+i+'" style="background:'+d.color+'"></div></div></div>';
     }).join('');
     items.forEach(function(d,i){ setTimeout(function(){ const el=document.getElementById('planadd-bar-'+i); if(el) el.style.width = d.avgProgress+'%'; }, 300); });
-  })();
-  /* CRITICAL JOBS TABLE */
-  (function(){
-    const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
-    const countEl = document.getElementById('criticalJobsCount');
-    if(countEl) countEl.textContent = CRITICAL_JOBS.length+' jobs';
-    document.getElementById('jobsTable').innerHTML = CRITICAL_JOBS.length ? CRITICAL_JOBS.map(function(j){
-      return '<tr><td class="mono" style="color:var(--text-faint)">'+j.kks+'</td>'+
-      '<td class="mono" style="color:var(--primary);font-weight:700">'+j.wo+'</td>'+
-      '<td class="job-desc">'+j.desc+'</td>'+
-      '<td class="cj-owner" style="color:var(--text-muted);font-weight:500">'+j.owner+'</td>'+
-      '<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:'+j.progress+'%"></div></div><span style="font-size:11px;color:var(--text-muted);font-weight:700">'+j.progress+'%</span></div></td>'+
-      '<td><span class="badge badge-'+(STATUS_BADGE_MAP[j.status]||'slate')+'">'+j.status+'</span></td>'+
-      '<td style="text-align:center;font-weight:800;'+(j.remaining<0?'color:var(--danger)':'')+'">'+(j.remaining<0 ? Math.abs(j.remaining)+'d late' : j.remaining+'d')+'</td>'+
-      '<td><span class="badge badge-'+priorityBadge[j.priority]+'">'+j.priority+'</span></td></tr>';
-    }).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--text-faint);padding:20px;">ไม่มีข้อมูลงาน</td></tr>';
   })();
   /* GANTT */
   (function(){
@@ -2158,20 +2107,6 @@ function wireViewAllLinks(model){
         });
       });
     });
-  };
-  const criticalBtn = document.getElementById('viewAllCritical');
-  if(criticalBtn) criticalBtn.onclick = function(){
-    const list = model.CRITICAL_JOBS_FULL || model.CRITICAL_JOBS;
-    const priorityBadge = {"Critical":"danger","High":"warning","Medium":"secondary"};
-    const priClass = {"Critical":"pri-critical","High":"pri-high","Medium":"pri-medium"};
-    const rows = '<div class="table-wrap dm-table-wrap"><table class="dm-list-table"><thead><tr><th>KKS</th><th>Description</th><th>Owner</th><th>Status</th><th>Priority</th></tr></thead><tbody>'+
-      list.map(function(j,i){
-        return '<tr class="'+(priClass[j.priority]||'')+'" style="--i:'+i+';"><td class="mono" style="color:var(--text-faint)">'+escapeHtml(j.kks)+'</td>'+
-          '<td>'+escapeHtml(j.desc)+'</td><td style="color:var(--text-muted)">'+escapeHtml(j.owner)+'</td>'+
-          '<td><span class="badge badge-'+(STATUS_BADGE_MAP[j.status]||'slate')+'">'+j.status+'</span></td>'+
-          '<td><span class="badge badge-'+priorityBadge[j.priority]+'">'+j.priority+'</span></td></tr>';
-      }).join('') + '</tbody></table></div>';
-    openDetailModal('Critical & High Priority Jobs', list.length+' jobs ranked by priority', rows);
   };
   const ganttBtn = document.getElementById('viewAllGantt');
   if(ganttBtn) ganttBtn.onclick = function(){
