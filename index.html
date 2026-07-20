@@ -910,6 +910,10 @@ const SHUTDOWN_TEMPLATE_HTML = `
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></svg>
               กรองทั้งหน้า
             </div>
+            <div class="ms-wrap" id="globalYearFilter"></div>
+            <div class="ms-wrap" id="globalAaNpsFilter"></div>
+            <div class="ms-wrap" id="globalSdTypeFilter"></div>
+            <div class="ms-wrap" id="globalAreaFilter"></div>
             <div class="ms-wrap" id="globalDeptFilter"></div>
             <div class="ms-wrap" id="globalResourceFilter"></div>
             <div class="ms-wrap" id="globalMonthFilter"></div>
@@ -1122,6 +1126,7 @@ function parseSD2Date(s){
    and the sheet's own Status column only ever contains Finished/In progress/Pending/Cancel — there is
    no explicit "next SD" value anywhere in the data, confirmed via a full-column fetch of BK (Status). */
 const SD2_COL = {
+  YEAR:0, AA_NPS:1, SD_TYPE:2,
   NO:5, KKS:7, CLASSIFY:9, DEPT:11, DEPT_NIS:12, DESC:13, ACTIVITY:14, AREA:3,
   ACCOUNT_NAME:25, RESPONSE_NAME:26, PLAN_ADD:6,
   WO_AREA:27, WO_NIS:10,
@@ -1230,9 +1235,15 @@ function parseShutdownJobs(rows, COL){
     const responseNameNis = COL.responseNameNisOf ? COL.responseNameNisOf(r) : '';
     const accountName = (r[COL.ACCOUNT_NAME]||'').trim();
     const responseName = (r[COL.RESPONSE_NAME]||'').trim();
+    /* primary filter fields (ปี / AA-NPS / ประเภท SD / พื้นที่) — only defined on the SD2/PP4 column
+       map for now; fall back to '' on templates that don't have these columns so those filters
+       simply have nothing to show rather than breaking. */
+    const year = COL.YEAR!==undefined ? (r[COL.YEAR]||'').trim() : '';
+    const aaNps = COL.AA_NPS!==undefined ? (r[COL.AA_NPS]||'').trim() : '';
+    const sdType = COL.SD_TYPE!==undefined ? (r[COL.SD_TYPE]||'').trim() : '';
     return {
       key: (no||'-')+'|'+(kks||'-')+'|'+desc.slice(0,40),
-      no, area:(r[COL.AREA]||'').trim(), dept, classify,
+      no, area:(r[COL.AREA]||'').trim(), dept, classify, year, aaNps, sdType,
       kks, desc, owner, accountName, responseName, responseNameNis, monthKey, monthLabel, planAddRaw, workTypeNis, remark,
       wo: (r[COL.WO_NIS]||'').trim(),
       decisionRaw, resource, status, progress, start, finish, cost, labor, spare, ot, priority
@@ -1898,6 +1909,10 @@ function createMultiSelect(containerId, placeholder, optionList, selectedSet, on
 }
 /* ============ GLOBAL FILTER BAR (multi-select Department + Resource + Month + extra column, filters the whole dashboard) ============ */
 function wireGlobalFilterBar(allJobs, rawHeader, rawRows, COL){
+  const yearWrap = document.getElementById('globalYearFilter');
+  const aaNpsWrap = document.getElementById('globalAaNpsFilter');
+  const sdTypeWrap = document.getElementById('globalSdTypeFilter');
+  const areaWrap = document.getElementById('globalAreaFilter');
   const deptWrap = document.getElementById('globalDeptFilter');
   const resWrap = document.getElementById('globalResourceFilter');
   const monthWrap = document.getElementById('globalMonthFilter');
@@ -1907,7 +1922,23 @@ function wireGlobalFilterBar(allJobs, rawHeader, rawRows, COL){
   const resetBtn = document.getElementById('globalFilterReset');
   if(!deptWrap || !resWrap) return;
   const resourceLabel = {"NIS":"NIS (Internal)","Outsource":"Outsource","Area":"Area","Pending":"Pending","Cancelled":"Cancelled"};
+  const yearSelected = new Set(), aaNpsSelected = new Set(), sdTypeSelected = new Set(), areaSelected = new Set();
   const deptSelected = new Set(), resSelected = new Set(), monthSelected = new Set(), val1Selected = new Set();
+
+  /* primary filters: ปี / AA-NPS / ประเภท SD / พื้นที่ — the first four columns of the sheet, promoted
+     to always-visible multi-select filters. Hidden automatically if a template doesn't carry that
+     field (e.g. fewer than 2 distinct values) so this stays safe across sheet variants. */
+  function buildPrimaryFilter(wrap, field, label){
+    if(!wrap) return null;
+    const vals = Array.from(new Set(allJobs.map(function(j){ return j[field]; }).filter(Boolean))).sort();
+    if(vals.length<2){ wrap.style.display = 'none'; return null; }
+    const selected = field==='year'?yearSelected: field==='aaNps'?aaNpsSelected: field==='sdType'?sdTypeSelected: areaSelected;
+    return createMultiSelect(wrap.id, label, vals.map(function(v){ return {value:v,label:v}; }), selected, applyGlobalFilter);
+  }
+  const yearMS = buildPrimaryFilter(yearWrap, 'year', 'ทุกปี (ปี)');
+  const aaNpsMS = buildPrimaryFilter(aaNpsWrap, 'aaNps', 'ทุก AA/NPS');
+  const sdTypeMS = buildPrimaryFilter(sdTypeWrap, 'sdType', 'ทุกประเภท SD');
+  const areaMS = buildPrimaryFilter(areaWrap, 'area', 'ทุกพื้นที่');
 
   const depts = Array.from(new Set(allJobs.map(function(j){ return j.dept; }).filter(Boolean))).sort();
   const deptMS = createMultiSelect('globalDeptFilter', 'ทุกแผนก (Department)', depts.map(function(d){ return {value:d,label:d}; }), deptSelected, applyGlobalFilter);
@@ -1974,6 +2005,10 @@ function wireGlobalFilterBar(allJobs, rawHeader, rawRows, COL){
     } else {
       filtered = (CURRENT_ALL_JOBS || allJobs).slice();
     }
+    if(yearSelected.size>0) filtered = filtered.filter(function(j){ return yearSelected.has(j.year); });
+    if(aaNpsSelected.size>0) filtered = filtered.filter(function(j){ return aaNpsSelected.has(j.aaNps); });
+    if(sdTypeSelected.size>0) filtered = filtered.filter(function(j){ return sdTypeSelected.has(j.sdType); });
+    if(areaSelected.size>0) filtered = filtered.filter(function(j){ return areaSelected.has(j.area); });
     if(deptSelected.size>0) filtered = filtered.filter(function(j){ return deptSelected.has(j.dept); });
     if(resSelected.size>0) filtered = filtered.filter(function(j){ return resSelected.has(j.resource); });
     if(monthSelected.size>0) filtered = filtered.filter(function(j){ return j.monthKey && monthSelected.has(j.monthKey); });
@@ -1987,6 +2022,10 @@ function wireGlobalFilterBar(allJobs, rawHeader, rawRows, COL){
   }
   if(resetBtn){
     resetBtn.onclick = function(){
+      if(yearMS){ yearSelected.clear(); yearMS.render(); }
+      if(aaNpsMS){ aaNpsSelected.clear(); aaNpsMS.render(); }
+      if(sdTypeMS){ sdTypeSelected.clear(); sdTypeMS.render(); }
+      if(areaMS){ areaSelected.clear(); areaMS.render(); }
       deptSelected.clear(); deptMS.render();
       resSelected.clear(); resMS.render();
       if(monthMS){ monthSelected.clear(); monthMS.render(); }
