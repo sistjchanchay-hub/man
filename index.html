@@ -329,10 +329,11 @@ html.dark .schema-chip{background:rgba(255,255,255,.03);}
 .ms-btn.has-selection{border-color:rgba(30,58,138,.4);color:var(--primary);font-weight:700;background:var(--primary-50);}
 .ms-btn svg{flex-shrink:0;transition:transform .2s;color:var(--text-faint);}
 .ms-wrap.open .ms-btn svg{transform:rotate(180deg);}
-.ms-panel{position:absolute;top:calc(100% + 6px);left:0;min-width:220px;max-height:280px;overflow-y:auto;
+/* .ms-panel is appended straight to <body> as a portal and positioned via inline top/left/width
+   from JS (see msEnsurePortal/positionPanel) — position:fixed here is the base, JS sets the rest. */
+.ms-panel{position:fixed;min-width:220px;max-height:280px;overflow-y:auto;
   background:var(--card-solid);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-hover);
-  padding:8px;z-index:40;display:none;}
-.ms-wrap.open .ms-panel{display:block;}
+  padding:8px;z-index:200;display:none;}
 .ms-option{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--text-muted);transition:.12s;}
 .ms-option:hover{background:rgba(30,58,138,.06);}
 .ms-option input{width:15px;height:15px;accent-color:var(--primary);cursor:pointer;flex-shrink:0;}
@@ -1796,6 +1797,32 @@ function openStatusJobsModal(statusName, jobList){
    picking a single value from a <select>. `selectedSet` is a Set the caller owns and mutates is
    read externally (e.g. for the Reset button); calling .render() again after external mutation
    refreshes the UI to match. Empty set = "no filter for this field" (same as blank option before). */
+/* The dropdown PANEL is rendered into a single shared node appended directly to <body> (a "portal"),
+   positioned with position:fixed from the trigger button's own bounding box. Cards use backdrop-filter,
+   which makes every .card its own stacking context — nesting the panel inside a card meant sibling
+   cards later in the DOM (e.g. the KPI row) could still paint over it regardless of z-index. Moving the
+   panel out to <body> sidesteps that entirely instead of fighting stacking-context math. */
+let MS_PORTAL = null;
+let MS_ACTIVE_WRAP = null;
+function msEnsurePortal(){
+  if(!MS_PORTAL){
+    MS_PORTAL = document.createElement('div');
+    MS_PORTAL.className = 'ms-panel ms-portal';
+    MS_PORTAL.style.display = 'none';
+    document.body.appendChild(MS_PORTAL);
+  }
+  return MS_PORTAL;
+}
+function msClosePortal(){
+  if(MS_PORTAL) MS_PORTAL.style.display = 'none';
+  if(MS_ACTIVE_WRAP) MS_ACTIVE_WRAP.classList.remove('open');
+  MS_ACTIVE_WRAP = null;
+}
+document.addEventListener('click', msClosePortal);
+if(typeof window!=='undefined' && window.addEventListener){
+  window.addEventListener('resize', msClosePortal);
+  window.addEventListener('scroll', msClosePortal, true);
+}
 function createMultiSelect(containerId, placeholder, optionList, selectedSet, onChange){
   const wrap = document.getElementById(containerId);
   if(!wrap) return null;
@@ -1809,42 +1836,66 @@ function createMultiSelect(containerId, placeholder, optionList, selectedSet, on
     }
     return selectedSet.size+' รายการที่เลือก';
   }
-  function render(){
-    const wasOpen = wrap.classList.contains('open');
-    wrap.innerHTML = '<button type="button" class="ms-btn'+(selectedSet.size?' has-selection':'')+'">'+
-        '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(summaryText())+'</span>'+
-        icon('<path d="m6 9 6 6 6-6"/>','width="14" height="14"')+
-      '</button>'+
-      '<div class="ms-panel">'+
+  function renderPanel(){
+    const panel = msEnsurePortal();
+    panel.innerHTML =
         (optionList.length ? optionList.map(function(o){
           return '<label class="ms-option'+(selectedSet.has(o.value)?' checked':'')+'"><input type="checkbox" value="'+escapeHtml(o.value)+'" '+(selectedSet.has(o.value)?'checked':'')+'>'+escapeHtml(o.label)+'</label>';
         }).join('') : '<p class="empty-note" style="padding:10px;">ไม่มีตัวเลือก</p>')+
-        (optionList.length ? '<div class="ms-panel-foot"><button type="button" data-ms-all>เลือกทั้งหมด</button><button type="button" data-ms-clear>ล้าง</button></div>' : '')+
-      '</div>';
-    if(wasOpen) wrap.classList.add('open');
-    wrap.querySelector('.ms-btn').addEventListener('click', function(e){
-      e.stopPropagation();
-      const isOpen = wrap.classList.contains('open');
-      document.querySelectorAll('.ms-wrap.open').forEach(function(w){ w.classList.remove('open'); });
-      if(!isOpen) wrap.classList.add('open');
-    });
-    wrap.querySelectorAll('.ms-option').forEach(function(lbl){ lbl.addEventListener('click', function(e){ e.stopPropagation(); }); });
-    wrap.querySelectorAll('.ms-option input').forEach(function(cb){
+        (optionList.length ? '<div class="ms-panel-foot"><button type="button" data-ms-all>เลือกทั้งหมด</button><button type="button" data-ms-clear>ล้าง</button></div>' : '');
+    panel.querySelectorAll('.ms-option').forEach(function(lbl){ lbl.addEventListener('click', function(e){ e.stopPropagation(); }); });
+    panel.querySelectorAll('.ms-option input').forEach(function(cb){
       cb.addEventListener('change', function(){
         if(cb.checked) selectedSet.add(cb.value); else selectedSet.delete(cb.value);
-        render();
+        renderButton();
+        renderPanel();
         onChange();
       });
     });
-    const allBtn = wrap.querySelector('[data-ms-all]');
-    if(allBtn) allBtn.addEventListener('click', function(e){ e.stopPropagation(); optionList.forEach(function(o){ selectedSet.add(o.value); }); render(); onChange(); });
-    const clearBtn = wrap.querySelector('[data-ms-clear]');
-    if(clearBtn) clearBtn.addEventListener('click', function(e){ e.stopPropagation(); selectedSet.clear(); render(); onChange(); });
+    const allBtn = panel.querySelector('[data-ms-all]');
+    if(allBtn) allBtn.onclick = function(e){ e.stopPropagation(); optionList.forEach(function(o){ selectedSet.add(o.value); }); renderButton(); renderPanel(); onChange(); };
+    const clearBtn = panel.querySelector('[data-ms-clear]');
+    if(clearBtn) clearBtn.onclick = function(e){ e.stopPropagation(); selectedSet.clear(); renderButton(); renderPanel(); onChange(); };
   }
-  render();
-  return { render: render, setOptions: function(newList){ optionList = newList; render(); } };
+  function positionPanel(){
+    const panel = msEnsurePortal();
+    const r = wrap.getBoundingClientRect();
+    const panelWidth = Math.max(220, r.width);
+    let left = r.left;
+    if(typeof window!=='undefined' && window.innerWidth && left+panelWidth > window.innerWidth-8){
+      left = Math.max(8, window.innerWidth-8-panelWidth);
+    }
+    panel.style.left = left+'px';
+    panel.style.top = (r.bottom+6)+'px';
+    panel.style.width = panelWidth+'px';
+  }
+  function openPanel(){
+    msClosePortal();
+    wrap.classList.add('open');
+    MS_ACTIVE_WRAP = wrap;
+    const panel = msEnsurePortal();
+    renderPanel();
+    positionPanel();
+    panel.style.display = 'block';
+  }
+  function renderButton(){
+    wrap.innerHTML = '<button type="button" class="ms-btn'+(selectedSet.size?' has-selection':'')+'">'+
+        '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(summaryText())+'</span>'+
+        icon('<path d="m6 9 6 6 6-6"/>','width="14" height="14"')+
+      '</button>';
+    wrap.querySelector('.ms-btn').addEventListener('click', function(e){
+      e.stopPropagation();
+      const isOpen = wrap.classList.contains('open');
+      msClosePortal();
+      if(!isOpen) openPanel();
+    });
+  }
+  renderButton();
+  return {
+    render: function(){ renderButton(); if(wrap.classList.contains('open')) renderPanel(); },
+    setOptions: function(newList){ optionList = newList; renderButton(); if(wrap.classList.contains('open')) renderPanel(); }
+  };
 }
-document.addEventListener('click', function(){ document.querySelectorAll('.ms-wrap.open').forEach(function(w){ w.classList.remove('open'); }); });
 /* ============ GLOBAL FILTER BAR (multi-select Department + Resource + Month + extra column, filters the whole dashboard) ============ */
 function wireGlobalFilterBar(allJobs, rawHeader, rawRows, COL){
   const deptWrap = document.getElementById('globalDeptFilter');
