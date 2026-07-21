@@ -606,15 +606,25 @@ const DEFAULT_PINNED = [
   {id:"1-Ggrb6DBK3Bhi7We58IomV034OKtBIMe7l_XyRlBeMk", gid:"1374892773", name:"Demo SMD"},
   {id:"1S5GqVWVKQffjKNcdtpE0W1i9Tu-HtUG56j7bkNmZ12g", gid:"1858739946", name:"SMD #คุณลูกปัด"}
 ];
+/* "primary"/"secondary" tones intentionally reference the CSS theme variables so KPI cards using
+   them (Total Jobs, In Progress, Total Rows, Distinct X, ...) recolor with the sidebar's color-theme
+   picker. The other tones (success/danger/warning/slate/violet) stay fixed hex — they carry semantic
+   meaning (green=good, red=critical, etc.) that shouldn't shift just because the brand color changed. */
 const TONE = {
-  primary:{bg:"#EEF0FE", fg:"#4F46E5", grad:"linear-gradient(135deg,#818CF8,#4F46E5)"},
+  primary:{bg:"var(--primary-50)", fg:"var(--primary)", grad:"linear-gradient(135deg,var(--primary-l),var(--primary))"},
   success:{bg:"#E7FBF3", fg:"#059669", grad:"linear-gradient(135deg,#34D399,#059669)"},
-  secondary:{bg:"#EAF2FE", fg:"#2563EB", grad:"linear-gradient(135deg,#60A5FA,#2563EB)"},
+  secondary:{bg:"var(--secondary-50)", fg:"var(--secondary)", grad:"linear-gradient(135deg,var(--secondary-l),var(--secondary))"},
   slate:{bg:"#F1F5F9", fg:"#64748B", grad:"linear-gradient(135deg,#94A3B8,#64748B)"},
   danger:{bg:"#FFEDF2", fg:"#E11D48", grad:"linear-gradient(135deg,#FB7185,#E11D48)"},
   warning:{bg:"#FEF6E7", fg:"#D97706", grad:"linear-gradient(135deg,#FBBF24,#D97706)"},
   violet:{bg:"#F5F0FF", fg:"#7C3AED", grad:"linear-gradient(135deg,#C084FC,#7C3AED)"},
 };
+/* box-shadow needs an alpha-tinted version of the tone's fg color. Hardcoded hex tones just get a hex
+   alpha suffix appended (existing trick); CSS-var tones (primary/secondary) can't use that trick since
+   "var(--primary)66" isn't valid CSS, so they go through color-mix() instead. */
+function toneShadowColor(fg){
+  return fg.charAt(0)==='#' ? (fg+'66') : ('color-mix(in srgb, '+fg+' 42%, transparent)');
+}
 const CAT_COLORS = ["#4F46E5","#2563EB","#059669","#06B6D4","#7C3AED","#F59E0B","#E11D48","#64748B","#0EA5E9","#84CC16"];
 const STATUS_COLORS = ["#10B981","#4F46E5","#F59E0B","#F43F5E","#94A3B8","#06B6D4","#7C3AED","#E11D48"];
 /* ============ HELPERS ============ */
@@ -1627,7 +1637,7 @@ function renderShutdownDashboard(model){
   document.getElementById('kpiGrid').innerHTML = KPI_DEFS.map(function(k,i){
     const t = TONE[k.tone];
     return '<div class="card kpi-card" style="animation:riseIn .5s ease forwards;animation-delay:'+(i*0.05)+'s;opacity:0;">'+
-      '<div class="kpi-top"><div class="kpi-icon" style="background:'+t.grad+';box-shadow:0 8px 18px -6px '+t.fg+'66">'+icon(k.icon,'width="18" height="18"')+'</div><span class="kpi-label">'+k.label+'</span></div>'+
+      '<div class="kpi-top"><div class="kpi-icon" style="background:'+t.grad+';box-shadow:0 8px 18px -6px '+toneShadowColor(t.fg)+'">'+icon(k.icon,'width="18" height="18"')+'</div><span class="kpi-label">'+k.label+'</span></div>'+
       '<p class="kpi-value num" id="kpi-val-'+i+'">0</p>'+
       '<p class="kpi-trend" style="color:'+t.fg+'">'+k.trend+'</p>'+
       '<div class="progress-track"><div class="progress-fill" id="kpi-bar-'+i+'" style="background:'+t.grad+'"></div></div>'+
@@ -2417,7 +2427,7 @@ function renderGenericDashboard(model){
   document.getElementById('kpiGrid').innerHTML = KPI_DEFS.map(function(k,i){
     const t = TONE[k.tone];
     return '<div class="card kpi-card" style="animation:riseIn .5s ease forwards;animation-delay:'+(i*0.05)+'s;opacity:0;">'+
-      '<div class="kpi-top"><div class="kpi-icon" style="background:'+t.grad+';box-shadow:0 8px 18px -6px '+t.fg+'66">'+icon(k.icon,'width="18" height="18"')+'</div><span class="kpi-label">'+escapeHtml(k.label)+'</span></div>'+
+      '<div class="kpi-top"><div class="kpi-icon" style="background:'+t.grad+';box-shadow:0 8px 18px -6px '+toneShadowColor(t.fg)+'">'+icon(k.icon,'width="18" height="18"')+'</div><span class="kpi-label">'+escapeHtml(k.label)+'</span></div>'+
       '<p class="kpi-value num" id="kpi-val-'+i+'">0</p>'+
       '<p class="kpi-trend" style="color:'+t.fg+'">'+escapeHtml(k.trend)+'</p>'+
       '<div class="progress-track"><div class="progress-fill" id="kpi-bar-'+i+'" style="background:'+t.grad+'"></div></div>'+
