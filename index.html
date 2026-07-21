@@ -1471,6 +1471,10 @@ function fixedResJobs(){
     return j.status!=='Cancelled' && FIXED_RES_TYPES.indexOf(j.resource)!==-1;
   });
 }
+/* Budget Summary uses the same per-job cost formula as the top "Budget" KPI card (Total Spare +
+   Total Labor + Cost OT) rather than the sheet's own "Total (THB)" column, so the two totals
+   reconcile — per user request after noticing the figures didn't match. */
+function moneyOf(j){ return (j.spare||0)+(j.labor||0)+(j.ot||0); }
 function deptBreakdownFor(jobList){
   const map = {};
   jobList.forEach(function(j){
@@ -1478,7 +1482,7 @@ function deptBreakdownFor(jobList){
     (map[key]=map[key]||[]).push(j);
   });
   return Object.entries(map).map(function(e){
-    return { dept:e[0], jobs:e[1].length, cost: e[1].reduce(function(s,j){ return s+j.cost; },0) };
+    return { dept:e[0], jobs:e[1].length, cost: e[1].reduce(function(s,j){ return s+moneyOf(j); },0) };
   }).sort(function(a,b){ return b.jobs-a.jobs; }).slice(0,8);
 }
 /* builds the "bar-row" list markup (reusing the existing .bar-row/.bar-icon/.bar-track/.bar-fill
@@ -1540,43 +1544,52 @@ function renderResourceAllocationCard(){
     animators.forEach(function(fn){ fn(); });
   }
 }
+/* Combined view intentionally covers EVERY job (all resource types, all statuses — including
+   Pending/Cancelled) using the same Spare+Labor+OT formula as the top KPI "Budget" card, so the
+   "Total Budget" figure reconciles exactly with that KPI. The separate per-type view below stays
+   scoped to NIS/Outsource/Area only (Cancelled excluded) since that's a resource-allocation view,
+   not a reconciliation total. */
+const BUDGET_ALL_COLOR = { NIS:'#059669', Outsource:'#F59E0B', Area:'#4F46E5', Pending:'#94A3B8', Cancelled:'#F43F5E' };
+const BUDGET_ALL_LABEL = { NIS:'NIS (Internal)', Outsource:'Outsource', Area:'Area', Pending:'Pending', Cancelled:'Cancelled' };
+const BUDGET_ALL_TYPES = ['NIS','Outsource','Area','Pending','Cancelled'];
 function renderBudgetSummaryCard(){
   const state = BUDGET_CARD_STATE;
   const wrap = document.getElementById('budgetTypeToggle');
   if(wrap) wrap.classList.toggle('combined', !!state.combine);
   const body = document.getElementById('budgetCardBody');
   if(!body) return;
-  const jobs = fixedResJobs();
-  function costOf(list){ return list.reduce(function(s,j){ return s+j.cost; },0); }
   if(state.combine){
-    const byType = { NIS:0, Outsource:0, Area:0 };
-    jobs.forEach(function(j){ byType[j.resource]+=j.cost; });
-    const total = costOf(jobs) || 1;
+    const allJobs = (typeof CURRENT_ALL_JOBS!=='undefined' && CURRENT_ALL_JOBS) ? CURRENT_ALL_JOBS : [];
+    const byType = { NIS:0, Outsource:0, Area:0, Pending:0, Cancelled:0 };
+    allJobs.forEach(function(j){ byType[j.resource] = (byType[j.resource]||0) + moneyOf(j); });
+    const total = allJobs.reduce(function(s,j){ return s+moneyOf(j); },0) || 1;
     let acc=0;
-    const stops = FIXED_RES_TYPES.filter(function(k){ return byType[k]>0; }).map(function(k){
+    const stops = BUDGET_ALL_TYPES.filter(function(k){ return byType[k]>0; }).map(function(k){
       const start=acc/total*360; acc+=byType[k]; const end=acc/total*360;
-      return RES_TYPE_COLOR[k]+' '+start.toFixed(2)+'deg '+end.toFixed(2)+'deg';
+      return BUDGET_ALL_COLOR[k]+' '+start.toFixed(2)+'deg '+end.toFixed(2)+'deg';
     }).join(', ') || '#E2E8F0 0deg 360deg';
-    const bars = barRowsBuild('budgetCombined', deptBreakdownFor(jobs), '#4F46E5', 'cost', function(v){ return '฿'+formatCompact(v); });
+    const bars = barRowsBuild('budgetCombined', deptBreakdownFor(allJobs), '#4F46E5', 'cost', function(v){ return '฿'+formatCompact(v); });
     body.innerHTML =
       '<div class="budget-flex">'+
         '<div class="donut-wrap" style="width:150px;height:150px;"><div class="donut-circle" style="width:150px;height:150px;background:conic-gradient('+stops+')"></div>'+
           '<div class="donut-hole" style="inset:24px;"></div><div class="donut-center"><p class="big grad-text" style="font-size:16px">฿'+formatCompact(total)+'</p><p class="small">Total Budget</p></div></div>'+
-        '<div><div>'+FIXED_RES_TYPES.map(function(k){
-          return '<div class="budget-item"><div class="budget-item-head"><span class="l"><span class="dot" style="background:'+RES_TYPE_COLOR[k]+'"></span>'+RES_TYPE_LABEL[k]+'</span>'+
+        '<div><div>'+BUDGET_ALL_TYPES.filter(function(k){ return byType[k]>0; }).map(function(k){
+          return '<div class="budget-item"><div class="budget-item-head"><span class="l"><span class="dot" style="background:'+BUDGET_ALL_COLOR[k]+'"></span>'+BUDGET_ALL_LABEL[k]+'</span>'+
             '<span class="v">฿'+formatCompact(byType[k])+' <span style="color:var(--text-faint);font-weight:600">('+Math.round(byType[k]/total*100)+'%)</span></span></div>'+
-            '<div class="progress-track" style="margin:0"><div class="progress-fill" style="background:'+RES_TYPE_COLOR[k]+';width:'+(byType[k]/total*100)+'%"></div></div></div>';
+            '<div class="progress-track" style="margin:0"><div class="progress-fill" style="background:'+BUDGET_ALL_COLOR[k]+';width:'+(byType[k]/total*100)+'%"></div></div></div>';
         }).join('')+'</div></div>'+
       '</div>'+
-      '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);"><p style="margin:0 0 10px;font-size:11px;font-weight:800;color:var(--text-faint);text-transform:uppercase;letter-spacing:.03em;">งบประมาณตาม Work Type NIS</p>'+bars.html+'</div>';
+      '<p style="margin:10px 0 0;font-size:10.5px;color:var(--text-faint);">ยอดรวมนี้ตรงกับ KPI การ์ด "Budget" ด้านบน — รวมทุกสถานะ/ทุกประเภท (รวม Pending, Cancelled)</p>'+
+      '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);"><p style="margin:0 0 10px;font-size:11px;font-weight:800;color:var(--text-faint);text-transform:uppercase;letter-spacing:.03em;">งบประมาณตาม Work Type NIS</p>'+bars.html+'</div>';
     bars.animate();
   } else {
+    const jobs = fixedResJobs();
     const activeTypes = FIXED_RES_TYPES.filter(function(k){ return state.types[k]; });
     if(!activeTypes.length){ body.innerHTML = '<p class="empty-note">เลือกอย่างน้อย 1 ประเภทเพื่อแสดงข้อมูล</p>'; return; }
     const animators = [];
     body.innerHTML = activeTypes.map(function(k){
       const list = jobs.filter(function(j){ return j.resource===k; });
-      const totalK = costOf(list);
+      const totalK = list.reduce(function(s,j){ return s+moneyOf(j); },0);
       const bars = barRowsBuild('budget-'+k, deptBreakdownFor(list), RES_TYPE_COLOR[k], 'cost', function(v){ return '฿'+formatCompact(v); });
       animators.push(bars.animate);
       return '<div style="margin-bottom:18px;">'+
